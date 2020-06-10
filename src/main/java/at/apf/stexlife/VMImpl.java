@@ -6,6 +6,7 @@ import at.apf.stexlife.data.DataUnit;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.StexFrame;
+import at.apf.stexlife.runtime.exception.InvalidTypeException;
 import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -48,6 +49,19 @@ public class VMImpl {
         }
     }
 
+    private DataUnit resolveIdentifier(StexLifeGrammarParser.IdentifierContext ctx) {
+        List<TerminalNode> ids = ctx.ID();
+        DataUnit dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
+        for (int i = 1; i < ids.size(); i++) {
+            String name = ids.get(i).getText();
+            if (dataUnit.getType() != DataType.OBJECT || !dataUnit.getObject().containsKey(name)) {
+                throw new NameNotFoundException(name);
+            }
+            dataUnit = dataUnit.getObject().get(name);
+        }
+        return dataUnit;
+    }
+
     private void runFunction(StexLifeGrammarParser.FunctionContext f) {
         for (StexLifeGrammarParser.StmtContext stmt: f.stmt()) {
             if (stmt.declareStmt() != null) {
@@ -76,15 +90,7 @@ public class VMImpl {
             if (e.operand().value() != null) {
                 return Converter.fromValueContext(e.operand().value());
             } else {
-                List<TerminalNode> ids = e.operand().identifier().ID();
-                DataUnit dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
-                for (int i = 1; i < ids.size(); i++) {
-                    String name = ids.get(i).getText();
-                    if (dataUnit.getType() != DataType.OBJECT || !dataUnit.getObject().containsKey(name)) {
-                        throw new NameNotFoundException(name);
-                    }
-                    dataUnit = dataUnit.getObject().get(name);
-                }
+                DataUnit dataUnit = resolveIdentifier(e.operand().identifier());
                 if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
                     return new DataUnit(dataUnit.getContent(), dataUnit.getType());
                 }
@@ -108,6 +114,17 @@ public class VMImpl {
                 obj.put(name, evalExpression(field.expression()));
             }
             return new DataUnit(obj, DataType.OBJECT);
+        } else if (e.arrayAccess() != null) {
+            StexLifeGrammarParser.ArrayAccessContext ctx = e.arrayAccess();
+            DataUnit index = evalExpression(ctx.expression());
+            if (index.getType() != DataType.INT) {
+                throw new InvalidTypeException(index.getType(), DataType.INT);
+            }
+            DataUnit arr = resolveIdentifier(ctx.identifier());
+            if (arr.getType() != DataType.ARRAY) {
+                throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
+            }
+            return arr.getArray()[index.getInt().intValue()];
         }
 
         return new DataUnit(null, DataType.NULL);

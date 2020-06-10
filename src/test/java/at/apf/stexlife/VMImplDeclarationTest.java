@@ -37,7 +37,7 @@ public class VMImplDeclarationTest {
         DataFrame df = vm.getStexFrame().getDataFrame();
         Assert.assertTrue(df.contains("a"));
         Assert.assertEquals(DataType.FLOAT, df.get("a").getType());
-        Assert.assertEquals(1.2, df.get("a").getFloat().floatValue(), 0.0);
+        Assert.assertEquals(1.2, df.get("a").getFloat().floatValue(), 0.000001);
     }
 
     @Test
@@ -115,6 +115,19 @@ public class VMImplDeclarationTest {
         Assert.assertEquals(DataType.STRING, obj.get("name").getType());
         Assert.assertEquals(1, obj.get("id").getInt().intValue());
         Assert.assertEquals("foo", obj.get("name").getString());
+    }
+
+    @Test
+    public void arrayAccess_shouldReturnOne() {
+        String code =
+                "main() {" +
+                "  let a = [5, \"bla\", 1, null];" +
+                "  return a[2];" +
+                "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1, result.getInt().intValue());
     }
 
 }

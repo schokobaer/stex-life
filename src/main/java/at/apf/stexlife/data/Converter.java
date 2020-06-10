@@ -14,6 +14,6 @@ public class Converter {
         } else if (ctx.FLOAT() != null) {
             return new DataUnit(Double.parseDouble(ctx.FLOAT().getText()), DataType.FLOAT);
         }
-        return new DataUnit(ctx.STRING(), DataType.STRING);
+        return new DataUnit(ctx.STRING().getText().substring(1, ctx.STRING().getText().length() - 1), DataType.STRING);
     }
 }
