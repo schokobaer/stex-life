@@ -2,29 +2,33 @@ package at.apf.stexlife.runtime;
 
 import at.apf.stexlife.data.DataUnit;
 
-public class StaxFrame {
+public class StexFrame {
 
-    private StaxFrame parent;
+    private StexFrame parent;
     private DataFrame dataFrame;
     private DataUnit result;
     private DataUnit exception;
 
-    public StaxFrame(StaxFrame parent) {
+    public StexFrame(StexFrame parent) {
         this.parent = parent;
         this.dataFrame = new DataFrame(null);
     }
 
-    public StaxFrame(StaxFrame parent, DataFrame dataFrame) {
+    public StexFrame(StexFrame parent, DataFrame dataFrame) {
         this.parent = parent;
         this.dataFrame = dataFrame;
     }
 
-    public StaxFrame getParent() {
+    public StexFrame getParent() {
         return parent;
     }
 
     public DataFrame getDataFrame() {
         return dataFrame;
+    }
+
+    public void setResult(DataUnit result) {
+        this.result = result;
     }
 
     public DataUnit getResult() {

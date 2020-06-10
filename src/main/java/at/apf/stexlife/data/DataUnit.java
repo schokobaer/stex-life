@@ -21,8 +21,8 @@ public class DataUnit implements Comparable<DataUnit> {
         return content;
     }
 
-    public Integer getInteger() {
-        return (Integer) content;
+    public Long getInt() {
+        return (Long) content;
     }
 
     public Double getFloat() {
@@ -69,7 +69,7 @@ public class DataUnit implements Comparable<DataUnit> {
         if(this.type != that.type)
             return false;
         if(this.type == DataType.INT) {
-            return this.getInteger().equals(that.getInteger());
+            return this.getInt().equals(that.getInt());
         }
         else if(this.type == DataType.FLOAT) {
             return this.getFloat().equals(that.getFloat());
