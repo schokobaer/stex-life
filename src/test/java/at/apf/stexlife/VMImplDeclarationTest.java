@@ -93,7 +93,7 @@ public class VMImplDeclarationTest {
         DataFrame df = vm.getStexFrame().getDataFrame();
         Assert.assertTrue(df.contains("a"));
         Assert.assertEquals(DataType.ARRAY, df.get("a").getType());
-        Assert.assertEquals(4, df.get("a").getArray().length);
+        Assert.assertEquals(4, df.get("a").getArray().size());
     }
 
     @Test

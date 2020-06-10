@@ -53,7 +53,7 @@ functionCallArgs:	(expression (',' expression)*)? ;
 operation:		    operationExpression operationType expression
 					| notoperation ;
 notoperation:		'not' expression ;
-operationType:		('+'|'-'|'*'|'/'|'%'|'=='|'!='|'>'|'<'|'in'|'and'|'or') ;
+operationType:		(ADD|SUB|MUL|DIV|MOD|EQU|NEQ|GRT|GRE|SMT|SME|IN|AND|OR) ;
 
 assignee:			identifier | arrayAccess ;
 
@@ -75,3 +75,18 @@ LET         : 'let' ;
 CONST       : 'con' ;
 
 ID			:	([A-Z]|[a-z])+([A-Z]|[a-z]|[0-9])* ;
+
+ADD : '+' ;
+SUB : '-' ;
+MUL : '*' ;
+DIV : '/' ;
+MOD : '%' ;
+EQU : '==' ;
+NEQ : '!=' ;
+GRT : '>' ;
+GRE : '>=' ;
+SMT : '<' ;
+SME : '<=' ;
+IN : 'in' ;
+AND : 'and' ;
+OR : 'or' ;

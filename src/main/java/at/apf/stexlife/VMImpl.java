@@ -4,6 +4,7 @@ import at.apf.stexlife.data.Converter;
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
+import at.apf.stexlife.runtime.Arithmetics;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.StexFrame;
 import at.apf.stexlife.runtime.exception.InvalidTypeException;
@@ -11,6 +12,7 @@ import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +98,7 @@ public class VMImpl {
                     if (index.getType() != DataType.INT) {
                         throw new InvalidTypeException(index.getType(), DataType.INT);
                     }
-                    arr.getArray()[index.getInt().intValue()] = value;
+                    arr.getArray().set(index.getInt().intValue(), value);
                 }
             } else if (stmt.returnStmt() != null) {
                 StexLifeGrammarParser.ReturnStmtContext ctx = stmt.returnStmt();
@@ -134,9 +136,9 @@ public class VMImpl {
             }
         } else if (e.array() != null) {
             StexLifeGrammarParser.ArrayContext ctx = e.array();
-            DataUnit[] arr = new DataUnit[ctx.expression().size()];
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = evalExpression(ctx.expression(i));
+            List<DataUnit> arr = new ArrayList<>();
+            for (int i = 0; i < ctx.expression().size(); i++) {
+                arr.add(evalExpression(ctx.expression(i)));
             }
             return new DataUnit(arr, DataType.ARRAY);
         } else if (e.object() != null) {
@@ -160,9 +162,134 @@ public class VMImpl {
             if (arr.getType() != DataType.ARRAY) {
                 throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
             }
-            return arr.getArray()[index.getInt().intValue()];
+            return arr.getArray().get(index.getInt().intValue());
+        } else if (e.operation() != null) {
+            return evalOperation(e.operation());
         }
 
         return new DataUnit(null, DataType.NULL);
+    }
+
+    private DataUnit evalOperationExpression(StexLifeGrammarParser.OperationExpressionContext e) {
+        if (e.expression() != null) {
+            return evalExpression(e.expression());
+        } else if (e.operand() != null) {
+            if (e.operand().value() != null) {
+                return Converter.fromValueContext(e.operand().value());
+            } else {
+                // IDENTIFIER
+                DataUnit dataUnit;
+                try {
+                    dataUnit = resolveIdentifier(e.operand().identifier());
+                } catch (NameNotFoundException ex) {
+                    if (program.functionlist().function().stream()
+                            .anyMatch(f -> f.ID().getText().equals(e.operand().identifier().ID(0).getText()))) {
+                        dataUnit = new DataUnit(e.operand().identifier().ID(0).getText(), DataType.FUNCTION);
+                    }
+                    else throw ex;
+                }
+                if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
+                    return new DataUnit(dataUnit.getContent(), dataUnit.getType());
+                }
+                return dataUnit.copy();
+            }
+        } else if (e.array() != null) {
+            StexLifeGrammarParser.ArrayContext ctx = e.array();
+            List<DataUnit> arr = new ArrayList<>();
+            for (int i = 0; i < ctx.expression().size(); i++) {
+                arr.add(evalExpression(ctx.expression(i)));
+            }
+            return new DataUnit(arr, DataType.ARRAY);
+        } else if (e.object() != null) {
+            StexLifeGrammarParser.ObjectContext ctx = e.object();
+            Map<String, DataUnit> obj = new HashMap<>();
+            for (StexLifeGrammarParser.ObjectFieldContext field: ctx.objectField()) {
+                String name = field.ID().getText();
+                if (obj.containsKey(name)) {
+                    throw new NameAlreadyDeclaredException(name);
+                }
+                obj.put(name, evalExpression(field.expression()));
+            }
+            return new DataUnit(obj, DataType.OBJECT);
+        } else if (e.arrayAccess() != null) {
+            StexLifeGrammarParser.ArrayAccessContext ctx = e.arrayAccess();
+            DataUnit index = evalExpression(ctx.expression());
+            if (index.getType() != DataType.INT) {
+                throw new InvalidTypeException(index.getType(), DataType.INT);
+            }
+            DataUnit arr = resolveIdentifier(ctx.identifier());
+            if (arr.getType() != DataType.ARRAY) {
+                throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
+            }
+            return arr.getArray().get(index.getInt().intValue());
+        }
+
+        return new DataUnit(null, DataType.NULL);
+    }
+
+    private DataUnit evalOperation(StexLifeGrammarParser.OperationContext ctx) {
+        if (ctx.notoperation() != null) {
+            DataUnit exp = evalExpression(ctx.notoperation().expression());
+            if (exp.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(exp.getType(), DataType.BOOL);
+            }
+            return new DataUnit(!exp.getBool().booleanValue(), DataType.BOOL);
+        }
+
+        DataUnit left = evalOperationExpression(ctx.operationExpression());
+        if (ctx.operationType().AND() != null) {
+            if (left.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(left.getType(), DataType.BOOL);
+            }
+            if (!left.getBool().booleanValue()) {
+                return new DataUnit(false, DataType.BOOL);
+            }
+            DataUnit right = evalExpression(ctx.expression());
+            if (right.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(right.getType(), DataType.BOOL);
+            }
+            return new DataUnit(right.getBool(), DataType.BOOL);
+        } else if (ctx.operationType().OR() != null) {
+            if (left.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(left.getType(), DataType.BOOL);
+            }
+            if (left.getBool().booleanValue()) {
+                return new DataUnit(true, DataType.BOOL);
+            }
+            DataUnit right = evalExpression(ctx.expression());
+            if (right.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(right.getType(), DataType.BOOL);
+            }
+            return new DataUnit(left.getBool() && right.getBool(), DataType.BOOL);
+        }
+
+        DataUnit right = evalExpression(ctx.expression());
+        if (ctx.operationType().ADD() != null) {
+            return Arithmetics.Add(left, right);
+        } else if (ctx.operationType().SUB() != null) {
+            return Arithmetics.Sub(left, right);
+        } else if (ctx.operationType().MUL() != null) {
+            return Arithmetics.Mul(left, right);
+        } else if (ctx.operationType().DIV() != null) {
+            return Arithmetics.Div(left, right);
+        } else if (ctx.operationType().MOD() != null) {
+            return Arithmetics.Mod(left, right);
+        } else if (ctx.operationType().EQU() != null) {
+            return new DataUnit(left.equals(right), DataType.BOOL);
+        } else if (ctx.operationType().NEQ() != null) {
+            return new DataUnit(!left.equals(right), DataType.BOOL);
+        } else if (ctx.operationType().GRT() != null) {
+            return new DataUnit(left.compareTo(right) > 0, DataType.BOOL);
+        } else if (ctx.operationType().SMT() != null) {
+            return new DataUnit(left.compareTo(right) < 0, DataType.BOOL);
+        } else if (ctx.operationType().GRE() != null) {
+            return new DataUnit(left.compareTo(right) >= 0, DataType.BOOL);
+        } else if (ctx.operationType().SME() != null) {
+            return new DataUnit(left.compareTo(right) <= 0, DataType.BOOL);
+        } else if (ctx.operationType().IN() != null) {
+            return Arithmetics.In(left, right);
+        }
+
+        throw new RuntimeException("Unexpected operator");
     }
 }

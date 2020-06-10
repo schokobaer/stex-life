@@ -1,6 +1,8 @@
 package at.apf.stexlife.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DataUnit implements Comparable<DataUnit> {
@@ -37,8 +39,8 @@ public class DataUnit implements Comparable<DataUnit> {
         return (String) content;
     }
 
-    public DataUnit[] getArray() {
-        return (DataUnit[]) content;
+    public List<DataUnit> getArray() {
+        return (List<DataUnit>) content;
     }
 
     @SuppressWarnings("unchecked")
@@ -48,9 +50,9 @@ public class DataUnit implements Comparable<DataUnit> {
 
     public DataUnit copy() {
         if(type == DataType.ARRAY) {
-            DataUnit[] arr = new DataUnit[getArray().length];
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = getArray()[i];
+            List<DataUnit> arr = new ArrayList<>();
+            for (int i = 0; i < arr.size(); i++) {
+                arr.add(i, getArray().get(i));
             }
             return new DataUnit(arr, type);
         }
@@ -84,10 +86,10 @@ public class DataUnit implements Comparable<DataUnit> {
             return true;
         }
         else if(this.type == DataType.ARRAY) {
-            if(this.getArray().length != that.getArray().length)
+            if(this.getArray().size() != that.getArray().size())
                 return false;
-            for (int i = 0; i < getArray().length; i++) {
-                if(!this.getArray()[i].equals(that.getArray()[i]))
+            for (int i = 0; i < getArray().size(); i++) {
+                if(!this.getArray().get(i).equals(that.getArray().get(i)))
                     return false;
             }
             return true;
@@ -115,8 +117,8 @@ public class DataUnit implements Comparable<DataUnit> {
             return 1;
 
         if(type == DataType.ARRAY && that.type == DataType.ARRAY) {
-            return getArray().length == that.getArray().length ? 0 :
-                    getArray().length > that.getArray().length ? 1 : -1;
+            return getArray().size() == that.getArray().size() ? 0 :
+                    getArray().size() > that.getArray().size() ? 1 : -1;
         }
 
         if(type == DataType.STRING && that.type == DataType.STRING) {

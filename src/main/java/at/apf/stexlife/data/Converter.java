@@ -16,4 +16,8 @@ public class Converter {
         }
         return new DataUnit(ctx.STRING().getText().substring(1, ctx.STRING().getText().length() - 1), DataType.STRING);
     }
+
+    public static String stringify(DataUnit data) {
+        return data.toString();
+    }
 }
