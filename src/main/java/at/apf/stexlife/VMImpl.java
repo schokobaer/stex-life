@@ -10,7 +10,9 @@ import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class VMImpl {
@@ -76,6 +78,24 @@ public class VMImpl {
                 }
                 return new DataUnit(dataUnit.copy(), dataUnit.getType());
             }
+        } else if (e.array() != null) {
+            StexLifeGrammarParser.ArrayContext ctx = e.array();
+            DataUnit[] arr = new DataUnit[ctx.expression().size()];
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = evalExpression(ctx.expression(i));
+            }
+            return new DataUnit(arr, DataType.ARRAY);
+        } else if (e.object() != null) {
+            StexLifeGrammarParser.ObjectContext ctx = e.object();
+            Map<String, DataUnit> obj = new HashMap<>();
+            for (StexLifeGrammarParser.ObjectFieldContext field: ctx.objectField()) {
+                String name = field.ID().getText();
+                if (obj.containsKey(name)) {
+                    throw new NameAlreadyDeclaredException(name);
+                }
+                obj.put(name, evalExpression(field.expression()));
+            }
+            return new DataUnit(obj, DataType.OBJECT);
         }
 
         return new DataUnit(null, DataType.NULL);

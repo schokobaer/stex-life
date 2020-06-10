@@ -42,18 +42,18 @@ identifier:		ID ('.' ID)* ;
 value:			(INT|FLOAT|BOOLEAN|NULL|STRING) ;
 arrayAccess:	identifier '[' expression ']' ;
 
-object:				'{' objectfield (',' objectfield)* '}';
-objectfield:		ID (':' expression)? ;
+object:				'{' (objectField (',' objectField)*)? '}';
+objectField:		ID (':' expression)? ;
 
 array:				'[' (expression (',' expression)*)? ']' ;
 
 functionCall:		ID '(' functionCallArgs ')' ;
 functionCallArgs:	(expression (',' expression)*)? ;
 
-operation:		    operationExpression operationtype expression
+operation:		    operationExpression operationType expression
 					| notoperation ;
 notoperation:		'not' expression ;
-operationtype:		('+'|'-'|'*'|'/'|'%'|'=='|'!='|'>'|'<'|'in'|'and'|'or') ;
+operationType:		('+'|'-'|'*'|'/'|'%'|'=='|'!='|'>'|'<'|'in'|'and'|'or') ;
 
 assignee:			identifier | arrayAccess ;
 
