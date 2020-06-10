@@ -130,7 +130,7 @@ public class VMImpl {
                 if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
                     return new DataUnit(dataUnit.getContent(), dataUnit.getType());
                 }
-                return new DataUnit(dataUnit.copy(), dataUnit.getType());
+                return dataUnit.copy();
             }
         } else if (e.array() != null) {
             StexLifeGrammarParser.ArrayContext ctx = e.array();

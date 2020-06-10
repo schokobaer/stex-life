@@ -14,11 +14,39 @@ public class VMImplStmtTest {
     public void returnStmt_shouldReturnOne() {
         String code =
                 "main() {" +
-                "  return 1;" +
-                "}";
+                        "  return 1;" +
+                        "}";
         vm = new VMImpl(StexCodeParser.parse(code));
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(1, result.getInt().intValue());
+    }
+
+    @Test
+    public void assignStmt_shouldOverrideTheOldValueWithOne() {
+        String code =
+                "main() {" +
+                        "  let a = 5;" +
+                        "  a = 1;" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
+    }
+
+    @Test
+    public void assignStmtOnArray_shouldOverrideTheOldValueWithOne() {
+        String code =
+                "main() {" +
+                        "  let a = [5, 6, 9];" +
+                        "  a[1] = 1;" +
+                        "  return a[1];" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
     }
 }
