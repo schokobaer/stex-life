@@ -29,7 +29,12 @@ public class DataFrame {
     }
 
     public void set(String name, DataUnit value) {
-        variables.put(name, value);
+        DataFrame f = this;
+        while (f != null && !f.variables.containsKey(name)) {
+            f = f.parent;
+        }
+        f = f == null ? this : f;
+        f.variables.put(name, value);
     }
 
     public DataUnit get(String name) {

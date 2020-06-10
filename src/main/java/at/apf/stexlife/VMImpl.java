@@ -72,6 +72,32 @@ public class VMImpl {
                 }
                 DataUnit value = evalExpression(dcl.expression());
                 stexFrame.getDataFrame().set(name, value);
+            } else if (stmt.assignStmt() != null) {
+                StexLifeGrammarParser.AssignStmtContext ctx = stmt.assignStmt();
+                DataUnit value = evalExpression(ctx.expression());
+                if (ctx.assignee().identifier() != null) {
+                    // override the old value
+                    List<TerminalNode> ids = ctx.assignee().identifier().ID();
+                    if (ids.size() == 1) {
+                        stexFrame.getDataFrame().set(ids.get(0).getText(), value);
+                    } else {
+                        Map<String, DataUnit> obj = stexFrame.getDataFrame().get(ids.get(0).getText()).getObject();
+                        for (int i = 1; i < ids.size() - 1; i++) {
+                            obj = obj.get(ids.get(i).getText()).getObject();
+                        }
+                        obj.put(ids.get(ids.size() - 1).getText(), value);
+                    }
+                } else {
+                    DataUnit arr = resolveIdentifier(ctx.assignee().arrayAccess().identifier());
+                    if (arr.getType() != DataType.ARRAY) {
+                        throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
+                    }
+                    DataUnit index = evalExpression(ctx.assignee().arrayAccess().expression());
+                    if (index.getType() != DataType.INT) {
+                        throw new InvalidTypeException(index.getType(), DataType.INT);
+                    }
+                    arr.getArray()[index.getInt().intValue()] = value;
+                }
             } else if (stmt.returnStmt() != null) {
                 StexLifeGrammarParser.ReturnStmtContext ctx = stmt.returnStmt();
                 if (ctx.expression() != null) {
@@ -90,7 +116,17 @@ public class VMImpl {
             if (e.operand().value() != null) {
                 return Converter.fromValueContext(e.operand().value());
             } else {
-                DataUnit dataUnit = resolveIdentifier(e.operand().identifier());
+                // IDENTIFIER
+                DataUnit dataUnit;
+                try {
+                    dataUnit = resolveIdentifier(e.operand().identifier());
+                } catch (NameNotFoundException ex) {
+                    if (program.functionlist().function().stream()
+                            .anyMatch(f -> f.ID().getText().equals(e.operand().identifier().ID(0).getText()))) {
+                        dataUnit = new DataUnit(e.operand().identifier().ID(0).getText(), DataType.FUNCTION);
+                    }
+                    else throw ex;
+                }
                 if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
                     return new DataUnit(dataUnit.getContent(), dataUnit.getType());
                 }
