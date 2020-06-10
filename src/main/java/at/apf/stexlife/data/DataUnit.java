@@ -109,6 +109,7 @@ public class DataUnit implements Comparable<DataUnit> {
     @Override
     public int compareTo(DataUnit that) {
 
+        // Null
         if(type == DataType.NULL && that.getType() == DataType.NULL)
             return 0;
         if(type == DataType.NULL)
@@ -116,7 +117,42 @@ public class DataUnit implements Comparable<DataUnit> {
         if(that.getType() == DataType.NULL)
             return 1;
 
-        if(type == DataType.ARRAY && that.type == DataType.ARRAY) {
+        // Numbers
+        if (type == DataType.INT && that.type == DataType.INT) {
+            return getInt().compareTo(that.getInt());
+        } else if (type == DataType.INT && that.type == DataType.FLOAT) {
+            return getInt() > that.getFloat() ? 1 : getInt() < that.getFloat() ? -1 : 0;
+        } else if (type == DataType.FLOAT && that.type == DataType.INT) {
+            return getInt() < that.getFloat() ? 1 : getInt() > that.getFloat() ? -1 : 0;
+        } else if (type == DataType.FLOAT && that.type == DataType.FLOAT) {
+            return getFloat().compareTo(that.getFloat());
+        }
+
+        // Bool
+        if (type == DataType.BOOL && that.type == DataType.BOOL) {
+            int a = getBool().booleanValue() ? 1 : 0;
+            int b = that.getBool().booleanValue() ? 1 : 0;
+            return a - b;
+        }
+
+        // String
+        if (type == DataType.STRING && that.type == DataType.STRING) {
+            return getString().compareTo(that.getString());
+        }
+
+        // Array
+        if (type == DataType.ARRAY && that.type == DataType.ARRAY) {
+            return getArray().size() - that.getArray().size();
+        }
+
+        if (type != that.type) {
+            return Converter.stringify(this).compareTo(Converter.stringify(that));
+        }
+
+        return 0;
+
+
+        /*if(type == DataType.ARRAY && that.type == DataType.ARRAY) {
             return getArray().size() == that.getArray().size() ? 0 :
                     getArray().size() > that.getArray().size() ? 1 : -1;
         }
@@ -138,7 +174,7 @@ public class DataUnit implements Comparable<DataUnit> {
         //DataUnit d2 = Convert.toFloat(that);
 
         //return d1.getFloat().compareTo(d2.getFloat());
-        return -1;
+        return -1;*/
     }
 
 }

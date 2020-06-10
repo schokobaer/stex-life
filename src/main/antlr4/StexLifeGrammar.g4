@@ -74,8 +74,6 @@ STRING		:	'"' (. | '\"')*? '"' ;
 LET         : 'let' ;
 CONST       : 'con' ;
 
-ID			:	([A-Z]|[a-z])+([A-Z]|[a-z]|[0-9])* ;
-
 ADD : '+' ;
 SUB : '-' ;
 MUL : '*' ;
@@ -88,5 +86,7 @@ GRE : '>=' ;
 SMT : '<' ;
 SME : '<=' ;
 IN : 'in' ;
-AND : 'and' ;
-OR : 'or' ;
+AND : '&&' ;
+OR : '||' ;
+
+ID			:	([A-Z]|[a-z])+([A-Z]|[a-z]|[0-9])* ;
