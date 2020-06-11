@@ -299,6 +299,8 @@ public class VMImpl {
             return evalOperation(e.operation());
         } else if (e.functionCall() != null) {
             return evalFunctionCall(e.functionCall());
+        } else if (e.anonymousFunction() != null) {
+            return new DataUnit(new FunctionWrapper(e.anonymousFunction()), DataType.FUNCTION);
         }
 
         throw new RuntimeException("Unexpected operation expression");

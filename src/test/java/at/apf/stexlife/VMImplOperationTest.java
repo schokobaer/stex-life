@@ -338,4 +338,19 @@ public class VMImplOperationTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(1L, result.getInt().longValue());
     }
+
+    @Test
+    public void anonymousFunctionCall_shouldWork() {
+        String code =
+                "main() {" +
+                "  let f = (a) {" +
+                "    return a + 1;" +
+                "  };" +
+                "  return f(1);" +
+                "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(2L, result.getInt().longValue());
+    }
 }
