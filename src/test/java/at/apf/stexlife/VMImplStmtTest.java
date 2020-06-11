@@ -143,4 +143,20 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(3L, result.getInt().longValue());
     }
+
+    @Test
+    public void codeAfterReturnIsReached_shouldNotGetExecuted() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  if (a >= 0) {" +
+                        "    return 1;" +
+                        "  } " +
+                        "  return 0;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
+    }
 }
