@@ -79,6 +79,8 @@ public class VMImpl {
             return runAssignStmt(stmt.assignStmt());
         }  else if (stmt.ifStmt() != null) {
             return runIfStmt(stmt.ifStmt());
+        } else if (stmt.whileStmt() != null) {
+            return runWhileStmt(stmt.whileStmt());
         } else if (stmt.returnStmt() != null) {
             return runReturnStmt(stmt.returnStmt());
         }
@@ -165,6 +167,24 @@ public class VMImpl {
                     }
                 }
                 stexFrame.leafeDataFrame();
+            }
+        }
+        return true;
+    }
+
+    private boolean runWhileStmt(StexLifeGrammarParser.WhileStmtContext ctx) {
+        while (true) {
+            DataUnit decision = evalExpression(ctx.expression());
+            if (decision.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(decision.getType(), DataType.BOOL);
+            }
+            if (!decision.getBool()) {
+                break;
+            }
+            for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
+                if (!runStmt(stmt)) {
+                    return false;
+                }
             }
         }
         return true;

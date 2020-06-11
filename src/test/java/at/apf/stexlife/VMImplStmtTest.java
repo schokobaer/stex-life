@@ -159,4 +159,20 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(1L, result.getInt().longValue());
     }
+
+    @Test
+    public void whileLoop_shouldRun10Times() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  while (a < 10) {" +
+                        "    a = a + 1;" +
+                        "  } " +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(10L, result.getInt().longValue());
+    }
 }
