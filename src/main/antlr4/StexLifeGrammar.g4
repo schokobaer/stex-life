@@ -71,8 +71,8 @@ assignee:			identifier | arrayAccess ;
 WHITESPACE	:	[ \t\r\n]+ -> skip ;
 COMMENT		:	'/*' .*? '*/' -> skip ;
 
-INT         :   ([0-9])+ ;
-FLOAT		:	([0-9])+ ('.' ([0-9])+ )? ;
+INT         :   ('-')?([0-9])+ ;
+FLOAT		:	('-')?([0-9])+ ('.' ([0-9])+ )? ;
 BOOLEAN		:	('true' | 'false') ;
 NULL		:	'null' ;
 STRING		:	'"' (. | '\"')*? '"' ;

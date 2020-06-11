@@ -27,6 +27,20 @@ public class VMImplDeclarationTest {
     }
 
     @Test
+    public void declareNegativeInt_ShouldDeclareANegativeInt() {
+        String code =
+                "main() {" +
+                        "  let a = -1;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        vm.run("main");
+        DataFrame df = vm.getStexFrame().getDataFrame();
+        Assert.assertTrue(df.contains("a"));
+        Assert.assertEquals(DataType.INT, df.get("a").getType());
+        Assert.assertEquals(-1, df.get("a").getInt().intValue());
+    }
+
+    @Test
     public void declareFloat_ShouldDeclareAFloat() {
         String code =
                 "main() {" +
@@ -38,6 +52,20 @@ public class VMImplDeclarationTest {
         Assert.assertTrue(df.contains("a"));
         Assert.assertEquals(DataType.FLOAT, df.get("a").getType());
         Assert.assertEquals(1.2, df.get("a").getFloat().floatValue(), 0.000001);
+    }
+
+    @Test
+    public void declareNegativeFloat_ShouldDeclareANegativeFloat() {
+        String code =
+                "main() {" +
+                        "  let a = -1.2;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        vm.run("main");
+        DataFrame df = vm.getStexFrame().getDataFrame();
+        Assert.assertTrue(df.contains("a"));
+        Assert.assertEquals(DataType.FLOAT, df.get("a").getType());
+        Assert.assertEquals(-1.2, df.get("a").getFloat().floatValue(), 0.000001);
     }
 
     @Test

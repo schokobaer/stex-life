@@ -101,4 +101,46 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(3L, result.getInt().longValue());
     }
+
+    @Test
+    public void onlyElseifIsTrue() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  if (a > 0) {" +
+                        "    a = 1;" +
+                        "  } elseif (a == 0) {" +
+                        "    a = 2;" +
+                        "  } else {" +
+                        "    a = 3;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(2L, result.getInt().longValue());
+    }
+
+    @Test
+    public void secondElseifIsTrue() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  if (a > 0) {" +
+                        "    a = 1;" +
+                        "  } elseif (a == 2) {" +
+                        "    a = 2;" +
+                        "  } elseif (a <= 0) {" +
+                        "    a = 3;" +
+                        "  } else {" +
+                        "    a = 4;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3L, result.getInt().longValue());
+    }
 }
