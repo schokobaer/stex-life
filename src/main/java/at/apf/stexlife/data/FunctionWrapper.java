@@ -6,26 +6,37 @@ import java.util.List;
 
 public class FunctionWrapper {
 
-    private StexLifeGrammarParser.FunctionContext named;
+    private StexLifeGrammarParser.FunctionContext function;
     private StexLifeGrammarParser.AnonymousFunctionContext anonymous;
+    private String named;
 
     public FunctionWrapper(StexLifeGrammarParser.FunctionContext ctx) {
-        named = ctx;
+        function = ctx;
     }
 
     public FunctionWrapper(StexLifeGrammarParser.AnonymousFunctionContext ctx) {
         anonymous = ctx;
     }
 
+    public FunctionWrapper(String named) {
+        this.named = named;
+    }
+
+    public boolean isNamed() {
+        return named != null;
+    }
+
     public String getName() {
-        return named != null ? named.ID().getText() : "anonymous";
+        return function != null ? function.ID().getText() :
+                anonymous != null ? "anonymous" : named;
     }
 
     public StexLifeGrammarParser.ParamListContext getParamList() {
-        return named != null ? named.paramList() : anonymous.paramList();
+        return function != null ? function.paramList() :
+                anonymous != null ? anonymous.paramList() : null;
     }
 
     public List<StexLifeGrammarParser.StmtContext> getStmt() {
-        return named != null ? named.stmt() : anonymous.stmt();
+        return function != null ? function.stmt() : anonymous.stmt();
     }
 }

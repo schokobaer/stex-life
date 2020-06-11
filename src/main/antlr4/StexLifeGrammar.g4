@@ -37,7 +37,7 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction|functionRef) ;
+expression:      ('(' expression ')'|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction) ;
 operationExpression:	('(' expression ')'|operand|dynamicAccess|array|object|functionCall) ;
 
 operand:		(identifier|value);
@@ -51,7 +51,6 @@ objectField:		ID (':' expression)? ;
 array:				'[' (expression (',' expression)*)? ']' ;
 
 anonymousFunction:  '(' paramList ')' '{' stmt* '}' ;
-functionRef:        ID '{' INT '}' ;
 
 functionCall:		identifier '(' argList ')' ;
 argList:            (expression (',' expression)*)? ;

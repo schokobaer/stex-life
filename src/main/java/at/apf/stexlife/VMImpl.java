@@ -331,13 +331,14 @@ public class VMImpl {
         try {
             dataUnit = resolveIdentifier(ctx.identifier());
         } catch (NameNotFoundException ex) {
+            String name = ctx.identifier().ID(0).getText();
             if (program.function().stream()
-                    .anyMatch(f -> f.ID().getText().equals(ctx.identifier().ID(0).getText()))) {
-                dataUnit = new DataUnit(ctx.identifier().ID(0).getText(), DataType.FUNCTION);
+                    .anyMatch(f -> f.ID().getText().equals(name))) {
+                dataUnit = new DataUnit(new FunctionWrapper(name), DataType.FUNCTION);
             }
             else throw ex;
         }
-        if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
+        if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY || dataUnit.getType() == DataType.FUNCTION) {
             return new DataUnit(dataUnit.getContent(), dataUnit.getType());
         }
         return dataUnit.copy();
@@ -467,12 +468,9 @@ public class VMImpl {
                 fw = new FunctionWrapper(op.get());
             } else {
                 // Look in PluginRegistry
+                // TODO: Uncomment
                 /*if (pluginRegistry.isRegistered(name, ctx.argList().expression().size())) {
-                    DataUnit[] args = new DataUnit[ctx.argList().expression().size()];
-                    for (int i = 0; i < args.length; i++) {
-                        args[i] = evalExpression(ctx.argList().expression(i));
-                    }
-                    return pluginRegistry.call(name, args);
+                    fw = new FunctionWrapper(name);
                 } else {
                     throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
                 }*/
@@ -481,10 +479,33 @@ public class VMImpl {
         }
 
         // eval args
+        DataUnit[] args = new DataUnit[ctx.argList().expression().size()];
+        for (int i = 0; i < args.length; i++) {
+            args[i] = evalExpression(ctx.argList().expression(i));
+        }
+
+        // if named
+        if (fw.isNamed()) {
+            // find local function
+            String name = fw.getName();
+            Optional<StexLifeGrammarParser.FunctionContext> op = program.function().stream()
+                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == ctx.argList().expression().size())
+                    .findFirst();
+            if (op.isPresent()) {
+                fw = new FunctionWrapper(op.get());
+            } else {
+                // find plugin function
+                // TODO: Uncomment
+                /*if (pluginRegistry.isRegistered(name, ctx.argList().expression().size())) {
+                    return pluginRegistry.call(name, args);
+                }*/
+                throw new NameNotFoundException(name);
+            }
+        }
+
         DataFrame df = new DataFrame(null);
-        for (int i = 0; i < ctx.argList().expression().size(); i++) {
-            DataUnit value = evalExpression(ctx.argList().expression(i));
-            df.set(fw.getParamList().ID(i).getText(), value);
+        for (int i = 0; i < args.length; i++) {
+            df.set(fw.getParamList().ID(i).getText(), args[i]);
         }
 
         // call
@@ -492,7 +513,7 @@ public class VMImpl {
         DataUnit result = runFunction(fw);
         stexFrame = stexFrame.getParent();
 
-
         return result;
     }
+
 }
