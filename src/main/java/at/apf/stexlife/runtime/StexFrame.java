@@ -42,4 +42,15 @@ public class StexFrame {
     public DataUnit getException() {
         return exception;
     }
+
+    public void enterDataFrame() {
+        dataFrame = new DataFrame(dataFrame);
+    }
+
+    public void leafeDataFrame() {
+        if (dataFrame.getParent() == null) {
+            throw new RuntimeException("Top DataFrame can not be left");
+        }
+        dataFrame = dataFrame.getParent();
+    }
 }
