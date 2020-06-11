@@ -3,6 +3,7 @@ package at.apf.stexlife;
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
 import at.apf.stexlife.runtime.DataFrame;
+import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -297,14 +298,44 @@ public class VMImplOperationTest {
     public void callFunctionShouldWork() {
         String code =
                 "main() {" +
-                "  return sum(1, 2);" +
-                "}" +
-                "sum(a, b) {" +
-                "  return a + b;" +
-                "}";
+                        "  return sum(1, 2);" +
+                        "}" +
+                        "sum(a, b) {" +
+                        "  return a + b;" +
+                        "}";
         vm = new VMImpl(StexCodeParser.parse(code));
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(3L, result.getInt().longValue());
+    }
+
+    @Test(expected = NameNotFoundException.class)
+    public void unknownFunctionCall_shouldThrowNameException() {
+        String code =
+                "main() {" +
+                        "  return sumr(1, 2);" +
+                        "}" +
+                        "sum(a, b) {" +
+                        "  return a + b;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+    }
+
+    @Test
+    public void voidFunctionCall_shouldWork() {
+        String code =
+                "main() {" +
+                        "  let o = {a: 0};" +
+                        "  foo(o);" +
+                        "  return o.a;" +
+                        "}" +
+                        "foo(obj) {" +
+                        "  obj.a = 1;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
     }
 }

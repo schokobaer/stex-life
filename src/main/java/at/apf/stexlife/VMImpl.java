@@ -88,6 +88,9 @@ public class VMImpl {
             return runForStmt(stmt.forStmt());
         } else if (stmt.foreachStm() != null) {
             return runForeachStmt(stmt.foreachStm());
+        } else if (stmt.voidFunctionCall() != null) {
+            evalFunctionCall(stmt.voidFunctionCall().functionCall());
+            return true;
         } else if (stmt.returnStmt() != null) {
             return runReturnStmt(stmt.returnStmt());
         }
