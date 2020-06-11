@@ -15,7 +15,7 @@ function:	ID '(' paramlist ')' '{' stmt* '}' ;
 paramlist:  (ID (',' ID)*)? ;
 
 stmt:			(ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
-					 |assignStmt|declareStmt|voidFunctionCall);
+					 |assignStmt ';'|declareStmt|voidFunctionCall);
 					 
 ifStmt:		'if' '(' expression ')' '{' stmt* '}' (elseIfStmt)* (elseBlock)? ;
 elseIfStmt:         'elseif' '(' expression ')' '{' stmt* '}' ;
@@ -32,7 +32,7 @@ foreachStm:     'foreach' '(' 'let' ID 'in' expression ')' '{' stmt* '}' ;
 throwStmt:		'throw' expression ';' ;
 returnStmt:	    'return' (expression)? ';' ;
 
-assignStmt: 	assignee '=' expression ';' ;
+assignStmt: 	assignee '=' expression ;
 declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;

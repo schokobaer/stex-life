@@ -81,6 +81,8 @@ public class VMImpl {
             return runIfStmt(stmt.ifStmt());
         } else if (stmt.whileStmt() != null) {
             return runWhileStmt(stmt.whileStmt());
+        } else if (stmt.forStmt() != null) {
+            return runForStmt(stmt.forStmt());
         } else if (stmt.returnStmt() != null) {
             return runReturnStmt(stmt.returnStmt());
         }
@@ -135,6 +137,7 @@ public class VMImpl {
             stexFrame.enterDataFrame();
             for (StexLifeGrammarParser.StmtContext ifStmt: ctx.stmt()) {
                 if (!runStmt(ifStmt)) {
+                    stexFrame.leafeDataFrame();
                     return false;
                 }
             }
@@ -151,6 +154,7 @@ public class VMImpl {
                     stexFrame.enterDataFrame();
                     for (StexLifeGrammarParser.StmtContext elifStmt: elif.stmt()) {
                         if (!runStmt(elifStmt)) {
+                            stexFrame.leafeDataFrame();
                             return false;
                         }
                     }
@@ -163,6 +167,7 @@ public class VMImpl {
                 stexFrame.enterDataFrame();
                 for (StexLifeGrammarParser.StmtContext elStmt: ctx.elseBlock().stmt()) {
                     if (!runStmt(elStmt)) {
+                        stexFrame.leafeDataFrame();
                         return false;
                     }
                 }
@@ -181,12 +186,53 @@ public class VMImpl {
             if (!decision.getBool()) {
                 break;
             }
+            stexFrame.enterDataFrame();
             for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
                 if (!runStmt(stmt)) {
+                    stexFrame.leafeDataFrame();
                     return false;
                 }
             }
+            stexFrame.leafeDataFrame();
         }
+        return true;
+    }
+
+    private boolean runForStmt(StexLifeGrammarParser.ForStmtContext ctx) {
+        stexFrame.enterDataFrame();
+        // Declare loop variable
+        String name = ctx.ID().getText();
+        if (stexFrame.getDataFrame().contains(name)) {
+            throw new NameAlreadyDeclaredException(name);
+        }
+        DataUnit value = evalExpression(ctx.expression(0));
+        stexFrame.getDataFrame().set(name, value);
+
+        while (true) {
+            // expression
+            DataUnit decision = evalExpression(ctx.expression(1));
+            if (decision.getType() != DataType.BOOL) {
+                throw new InvalidTypeException(decision.getType(), DataType.BOOL);
+            }
+            if (!decision.getBool()) {
+                break;
+            }
+
+            // stmt
+            stexFrame.enterDataFrame();
+            for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
+                if (!runStmt(stmt)) {
+                    stexFrame.leafeDataFrame();
+                    stexFrame.leafeDataFrame();
+                    return false;
+                }
+            }
+            stexFrame.leafeDataFrame();
+
+            // assign
+            runAssignStmt(ctx.assignStmt());
+        }
+        stexFrame.leafeDataFrame();
         return true;
     }
 

@@ -3,6 +3,7 @@ package at.apf.stexlife;
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
 import at.apf.stexlife.runtime.DataFrame;
+import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -174,5 +175,35 @@ public class VMImplStmtTest {
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(10L, result.getInt().longValue());
+    }
+
+    @Test
+    public void forLoop_shouldRun10Times() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  for (let i = 0; i < 10; i = i + 1) {" +
+                        "    a = a + 1;" +
+                        "  } " +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(10L, result.getInt().longValue());
+    }
+
+    @Test(expected = NameNotFoundException.class)
+    public void loopVariableUsageAfterForLoop_shouldThrowNameException() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  for (let i = 0; i < 10; i = i + 1) {" +
+                        "    a = a + 1;" +
+                        "  } " +
+                        "  return i;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        vm.run("main");
     }
 }
