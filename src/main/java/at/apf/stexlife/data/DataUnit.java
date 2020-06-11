@@ -43,9 +43,12 @@ public class DataUnit implements Comparable<DataUnit> {
         return (List<DataUnit>) content;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, DataUnit> getObject() {
         return (Map<String, DataUnit>) content;
+    }
+
+    public FunctionWrapper getFunction() {
+        return (FunctionWrapper) content;
     }
 
     public DataUnit copy() {

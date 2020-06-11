@@ -14,7 +14,7 @@ functionlist:	function+ ;
 function:	ID '(' paramlist ')' '{' stmt* '}' ;
 paramlist:  (ID (',' ID)*)? ;
 
-stmt:			(ifStmt|tryStmt|whileStmt|throwStmt|returnStmt
+stmt:			(ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
 					 |assignStmt|declareStmt|voidFunctionCall);
 					 
 ifStmt:		'if' '(' expression ')' '{' stmt* '}' (elseIfStmt)* (elseBlock)? ;
@@ -37,7 +37,7 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|operation|operand|arrayAccess|array|object|functionCall|anonymousFunction) ;
+expression:      ('(' expression ')'|operation|operand|arrayAccess|array|object|functionCall|anonymousFunction|functionRef) ;
 operationExpression:	('(' expression ')'|operand|arrayAccess|array|object|functionCall) ;
 
 operand:		(identifier|value);
@@ -51,6 +51,7 @@ objectField:		ID (':' expression)? ;
 array:				'[' (expression (',' expression)*)? ']' ;
 
 anonymousFunction:  '(' paramlist ')' '{' stmt* '}' ;
+functionRef:        ID '{' INT '}' ;
 
 functionCall:		ID '(' functionCallArgs ')' ;
 functionCallArgs:	(expression (',' expression)*)? ;

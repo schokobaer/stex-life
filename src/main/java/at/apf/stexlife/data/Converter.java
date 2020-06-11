@@ -18,6 +18,17 @@ public class Converter {
     }
 
     public static String stringify(DataUnit data) {
+        if (data.getType() == DataType.ARRAY) {
+            return "[" + data.getArray().stream()
+                    .map(e -> stringify(e))
+                    .reduce((acc, str) -> acc + ", " + str) + "]";
+        } else if (data.getType() == DataType.OBJECT) {
+            return "{" + data.getObject().entrySet().stream()
+                    .map(kv -> kv.getKey() + ": " + stringify(kv.getValue()))
+                    .reduce((acc, str) -> acc + ", " + str) + "}";
+        } else if (data.getType() == DataType.FUNCTION) {
+            return data.getFunction().getName() + "{" + data.getFunction().getParamList().ID().size() + "}";
+        }
         return data.getContent() != null ? data.getContent().toString() : "null";
     }
 }

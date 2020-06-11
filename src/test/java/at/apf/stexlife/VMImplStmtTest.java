@@ -49,4 +49,56 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(1L, result.getInt().longValue());
     }
+
+    @Test
+    public void ifStmtIsTrue() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  if (a == 0) {" +
+                        "    a = 1;" +
+                        "  } else {" +
+                        "    a = 3;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
+    }
+
+    @Test
+    public void ifStmtIsFalse() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  if (a > 0) {" +
+                        "    a = 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(0L, result.getInt().longValue());
+    }
+
+    @Test
+    public void ifStmtIsFalseSoElseIsExecuted() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  if (a > 0) {" +
+                        "    a = 1;" +
+                        "  } else {" +
+                        "    a = 3;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3L, result.getInt().longValue());
+    }
 }
