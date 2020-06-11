@@ -354,15 +354,17 @@ public class VMImpl {
     }
 
     private DataUnit evalArrayAccess(StexLifeGrammarParser.ArrayAccessContext ctx) {
-        DataUnit index = evalExpression(ctx.expression());
-        if (index.getType() != DataType.INT) {
-            throw new InvalidTypeException(index.getType(), DataType.INT);
-        }
         DataUnit arr = resolveIdentifier(ctx.identifier());
-        if (arr.getType() != DataType.ARRAY) {
-            throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
+        DataUnit index = evalExpression(ctx.expression());
+        if (arr.getType() == DataType.ARRAY && index.getType() == DataType.INT) {
+            return arr.getArray().get(index.getInt().intValue());
         }
-        return arr.getArray().get(index.getInt().intValue());
+
+        if (arr.getType() == DataType.OBJECT && index.getType() == DataType.STRING) {
+            return arr.getObject().get(index.getString());
+        }
+
+        throw new InvalidTypeException(index.getType(), DataType.INT);
     }
 
     private DataUnit evalOperation(StexLifeGrammarParser.OperationContext ctx) {
