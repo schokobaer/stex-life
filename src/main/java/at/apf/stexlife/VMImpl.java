@@ -115,116 +115,87 @@ public class VMImpl {
         if (e.expression() != null) {
             return evalExpression(e.expression());
         } else if (e.operand() != null) {
-            if (e.operand().value() != null) {
-                return Converter.fromValueContext(e.operand().value());
-            } else {
-                // IDENTIFIER
-                DataUnit dataUnit;
-                try {
-                    dataUnit = resolveIdentifier(e.operand().identifier());
-                } catch (NameNotFoundException ex) {
-                    if (program.functionlist().function().stream()
-                            .anyMatch(f -> f.ID().getText().equals(e.operand().identifier().ID(0).getText()))) {
-                        dataUnit = new DataUnit(e.operand().identifier().ID(0).getText(), DataType.FUNCTION);
-                    }
-                    else throw ex;
-                }
-                if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
-                    return new DataUnit(dataUnit.getContent(), dataUnit.getType());
-                }
-                return dataUnit.copy();
-            }
+            return evalOperand(e.operand());
         } else if (e.array() != null) {
-            StexLifeGrammarParser.ArrayContext ctx = e.array();
-            List<DataUnit> arr = new ArrayList<>();
-            for (int i = 0; i < ctx.expression().size(); i++) {
-                arr.add(evalExpression(ctx.expression(i)));
-            }
-            return new DataUnit(arr, DataType.ARRAY);
+            return evalArray(e.array());
         } else if (e.object() != null) {
-            StexLifeGrammarParser.ObjectContext ctx = e.object();
-            Map<String, DataUnit> obj = new HashMap<>();
-            for (StexLifeGrammarParser.ObjectFieldContext field: ctx.objectField()) {
-                String name = field.ID().getText();
-                if (obj.containsKey(name)) {
-                    throw new NameAlreadyDeclaredException(name);
-                }
-                obj.put(name, evalExpression(field.expression()));
-            }
-            return new DataUnit(obj, DataType.OBJECT);
+            return evalObject(e.object());
         } else if (e.arrayAccess() != null) {
-            StexLifeGrammarParser.ArrayAccessContext ctx = e.arrayAccess();
-            DataUnit index = evalExpression(ctx.expression());
-            if (index.getType() != DataType.INT) {
-                throw new InvalidTypeException(index.getType(), DataType.INT);
-            }
-            DataUnit arr = resolveIdentifier(ctx.identifier());
-            if (arr.getType() != DataType.ARRAY) {
-                throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
-            }
-            return arr.getArray().get(index.getInt().intValue());
+            return evalArrayAccess(e.arrayAccess());
         } else if (e.operation() != null) {
             return evalOperation(e.operation());
         }
 
-        return new DataUnit(null, DataType.NULL);
+        throw new RuntimeException("Unexpected operation expression");
     }
 
     private DataUnit evalOperationExpression(StexLifeGrammarParser.OperationExpressionContext e) {
         if (e.expression() != null) {
             return evalExpression(e.expression());
         } else if (e.operand() != null) {
-            if (e.operand().value() != null) {
-                return Converter.fromValueContext(e.operand().value());
-            } else {
-                // IDENTIFIER
-                DataUnit dataUnit;
-                try {
-                    dataUnit = resolveIdentifier(e.operand().identifier());
-                } catch (NameNotFoundException ex) {
-                    if (program.functionlist().function().stream()
-                            .anyMatch(f -> f.ID().getText().equals(e.operand().identifier().ID(0).getText()))) {
-                        dataUnit = new DataUnit(e.operand().identifier().ID(0).getText(), DataType.FUNCTION);
-                    }
-                    else throw ex;
-                }
-                if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
-                    return new DataUnit(dataUnit.getContent(), dataUnit.getType());
-                }
-                return dataUnit.copy();
-            }
+            return evalOperand(e.operand());
         } else if (e.array() != null) {
-            StexLifeGrammarParser.ArrayContext ctx = e.array();
-            List<DataUnit> arr = new ArrayList<>();
-            for (int i = 0; i < ctx.expression().size(); i++) {
-                arr.add(evalExpression(ctx.expression(i)));
-            }
-            return new DataUnit(arr, DataType.ARRAY);
+            return evalArray(e.array());
         } else if (e.object() != null) {
-            StexLifeGrammarParser.ObjectContext ctx = e.object();
-            Map<String, DataUnit> obj = new HashMap<>();
-            for (StexLifeGrammarParser.ObjectFieldContext field: ctx.objectField()) {
-                String name = field.ID().getText();
-                if (obj.containsKey(name)) {
-                    throw new NameAlreadyDeclaredException(name);
-                }
-                obj.put(name, evalExpression(field.expression()));
-            }
-            return new DataUnit(obj, DataType.OBJECT);
+            return evalObject(e.object());
         } else if (e.arrayAccess() != null) {
-            StexLifeGrammarParser.ArrayAccessContext ctx = e.arrayAccess();
-            DataUnit index = evalExpression(ctx.expression());
-            if (index.getType() != DataType.INT) {
-                throw new InvalidTypeException(index.getType(), DataType.INT);
-            }
-            DataUnit arr = resolveIdentifier(ctx.identifier());
-            if (arr.getType() != DataType.ARRAY) {
-                throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
-            }
-            return arr.getArray().get(index.getInt().intValue());
+            return evalArrayAccess(e.arrayAccess());
         }
 
-        return new DataUnit(null, DataType.NULL);
+        throw new RuntimeException("Unexpected operation expression");
+    }
+
+    private DataUnit evalOperand(StexLifeGrammarParser.OperandContext ctx) {
+        if (ctx.value() != null) {
+            return Converter.fromValueContext(ctx.value());
+        }
+        // IDENTIFIER
+        DataUnit dataUnit;
+        try {
+            dataUnit = resolveIdentifier(ctx.identifier());
+        } catch (NameNotFoundException ex) {
+            if (program.functionlist().function().stream()
+                    .anyMatch(f -> f.ID().getText().equals(ctx.identifier().ID(0).getText()))) {
+                dataUnit = new DataUnit(ctx.identifier().ID(0).getText(), DataType.FUNCTION);
+            }
+            else throw ex;
+        }
+        if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY) {
+            return new DataUnit(dataUnit.getContent(), dataUnit.getType());
+        }
+        return dataUnit.copy();
+    }
+
+    private DataUnit evalArray(StexLifeGrammarParser.ArrayContext ctx) {
+        List<DataUnit> arr = new ArrayList<>();
+        for (int i = 0; i < ctx.expression().size(); i++) {
+            arr.add(evalExpression(ctx.expression(i)));
+        }
+        return new DataUnit(arr, DataType.ARRAY);
+    }
+
+    private DataUnit evalObject(StexLifeGrammarParser.ObjectContext ctx) {
+        Map<String, DataUnit> obj = new HashMap<>();
+        for (StexLifeGrammarParser.ObjectFieldContext field: ctx.objectField()) {
+            String name = field.ID().getText();
+            if (obj.containsKey(name)) {
+                throw new NameAlreadyDeclaredException(name);
+            }
+            obj.put(name, evalExpression(field.expression()));
+        }
+        return new DataUnit(obj, DataType.OBJECT);
+    }
+
+    private DataUnit evalArrayAccess(StexLifeGrammarParser.ArrayAccessContext ctx) {
+        DataUnit index = evalExpression(ctx.expression());
+        if (index.getType() != DataType.INT) {
+            throw new InvalidTypeException(index.getType(), DataType.INT);
+        }
+        DataUnit arr = resolveIdentifier(ctx.identifier());
+        if (arr.getType() != DataType.ARRAY) {
+            throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
+        }
+        return arr.getArray().get(index.getInt().intValue());
     }
 
     private DataUnit evalOperation(StexLifeGrammarParser.OperationContext ctx) {

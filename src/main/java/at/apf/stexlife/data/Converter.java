@@ -18,6 +18,6 @@ public class Converter {
     }
 
     public static String stringify(DataUnit data) {
-        return data.toString();
+        return data.getContent() != null ? data.getContent().toString() : "null";
     }
 }

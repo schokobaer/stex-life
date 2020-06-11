@@ -145,8 +145,148 @@ public class VMImplOperationTest {
     public void andOnTwoBool_ShouldBeTrue() {
         String code =
                 "main() {" +
-                "  return true && true;" +
-                "}";
+                        "  return true && true;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.BOOL, result.getType());
+        Assert.assertTrue(result.getBool().booleanValue());
+    }
+
+    @Test
+    public void arrayAddElem_ShouldWork() {
+        String code =
+                "main() {" +
+                        "  let arr = [1,2,3];" +
+                        "  return arr + 4;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(4, result.getArray().size());
+        Assert.assertEquals(4, result.getArray().get(3).getInt().intValue());
+    }
+
+    @Test
+    public void elemAddArray_ShouldWork() {
+        String code =
+                "main() {" +
+                        "  let arr = [1,2,3];" +
+                        "  return 0 + arr;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(4, result.getArray().size());
+        Assert.assertEquals(0, result.getArray().get(0).getInt().intValue());
+    }
+
+    @Test
+    public void stringAppend() {
+        String code =
+                "main() {" +
+                        "  let s = \"foo\";" +
+                        "  return s + \"bar\";" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("foobar", result.getString());
+    }
+
+    @Test
+    public void stringPrepand() {
+        String code =
+                "main() {" +
+                        "  let s = \"foo\";" +
+                        "  return \"bar\" + s;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("barfoo", result.getString());
+    }
+
+    @Test
+    public void objectAddObject() {
+        String code =
+                "main() {" +
+                        "  let obj = {a: 1};" +
+                        "  return obj + {b: 2};" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.OBJECT, result.getType());
+        Assert.assertTrue(result.getObject().containsKey("a"));
+        Assert.assertTrue(result.getObject().containsKey("b"));
+        Assert.assertEquals(1, result.getObject().get("a").getInt().intValue());
+        Assert.assertEquals(2, result.getObject().get("b").getInt().intValue());
+    }
+
+    @Test
+    public void arrayMulArray() {
+        String code =
+                "main() {" +
+                        "  let arr = [1, 2, 3];" +
+                        "  return arr * [4, 5];" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(5, result.getArray().size());
+        Assert.assertEquals(1, result.getArray().get(0).getInt().intValue());
+        Assert.assertEquals(5, result.getArray().get(4).getInt().intValue());
+    }
+
+    @Test
+    public void arrayDivElem() {
+        String code =
+                "main() {" +
+                        "  let arr = [1, 2, 3];" +
+                        "  return arr / 2;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(2, result.getArray().size());
+        Assert.assertEquals(1, result.getArray().get(0).getInt().intValue());
+        Assert.assertEquals(3, result.getArray().get(1).getInt().intValue());
+    }
+
+    @Test
+    public void objectDivString() {
+        String code =
+                "main() {" +
+                        "  let obj = {a: 1, b: 2};" +
+                        "  return obj / \"b\";" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.OBJECT, result.getType());
+        Assert.assertTrue(result.getObject().containsKey("a"));
+        Assert.assertEquals(1, result.getObject().get("a").getInt().intValue());
+    }
+
+    @Test
+    public void stringInString() {
+        String code =
+                "main() {" +
+                        "  let str = \"foobar\";" +
+                        "  return \"oba\" in str;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.BOOL, result.getType());
+        Assert.assertTrue(result.getBool().booleanValue());
+    }
+
+    @Test
+    public void elemInArray() {
+        String code =
+                "main() {" +
+                        "  let arr = [1, 2, 3];" +
+                        "  return 2 in arr;" +
+                        "}";
         vm = new VMImpl(StexCodeParser.parse(code));
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.BOOL, result.getType());

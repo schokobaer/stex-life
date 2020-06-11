@@ -82,7 +82,7 @@ public class DataUnit implements Comparable<DataUnit> {
         else if(this.type == DataType.STRING) {
             return this.getString().equals(that.getString());
         }
-        else if(this.type == DataType.NULL) {
+        else if(this.type == DataType.NULL && that.type == DataType.NULL) {
             return true;
         }
         else if(this.type == DataType.ARRAY) {
@@ -177,4 +177,11 @@ public class DataUnit implements Comparable<DataUnit> {
         return -1;*/
     }
 
+
+    @Override
+    public String toString() {
+        return "DataUnit{" +
+                  content + ":" + type.name() +
+                '}';
+    }
 }

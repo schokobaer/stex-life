@@ -5,13 +5,23 @@ import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
 import at.apf.stexlife.runtime.exception.InvalidTypeException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class Arithmetics {
 
     public static DataUnit Add(DataUnit left, DataUnit right) {
         if (left.getType() == DataType.ARRAY) {
-            left.getArray().add(right);
+            List<DataUnit> arr = new ArrayList<>(left.getArray());
+            arr.add(right);
+            return new DataUnit(arr, DataType.ARRAY);
         } else if (right.getType() == DataType.ARRAY) {
-            right.getArray().add(0, left);
+            List<DataUnit> arr = new ArrayList<>(right.getArray());
+            arr.add(0, left);
+            return new DataUnit(arr, DataType.ARRAY);
         } else if (left.getType() == DataType.STRING) {
             return new DataUnit(left.getString() + Converter.stringify(right), DataType.STRING);
         } else if (right.getType() == DataType.STRING) {
@@ -34,6 +44,10 @@ public class Arithmetics {
             } else if (left.getType() == DataType.INT) {
                 return new DataUnit(left.getInt().doubleValue() + right.getFloat(), DataType.FLOAT);
             }
+        } else if (left.getType() == DataType.OBJECT && right.getType() == DataType.OBJECT) {
+            Map<String, DataUnit> obj = new HashMap<>(left.getObject());
+            right.getObject().entrySet().stream().forEach(prop -> obj.put(prop.getKey(), prop.getValue()));
+            return new DataUnit(obj, DataType.OBJECT);
         }
 
         throw new InvalidTypeException(left.getType(), DataType.INT);
@@ -70,6 +84,10 @@ public class Arithmetics {
             } else if (right.getType() == DataType.FLOAT) {
                 return new DataUnit(left.getFloat() * right.getFloat(), DataType.FLOAT);
             }
+        } else if (left.getType() == DataType.ARRAY && right.getType() == DataType.ARRAY) {
+            List<DataUnit> arr = new ArrayList<>(left.getArray());
+            arr.addAll(right.getArray());
+            return new DataUnit(arr, DataType.ARRAY);
         }
 
         throw new InvalidTypeException(left.getType(), DataType.INT);
@@ -88,6 +106,15 @@ public class Arithmetics {
             } else if (right.getType() == DataType.FLOAT) {
                 return new DataUnit(left.getFloat() / right.getFloat(), DataType.FLOAT);
             }
+        } else if (left.getType() == DataType.ARRAY) {
+            List<DataUnit> arr = left.getArray().stream().filter(u -> !u.equals(right)).collect(Collectors.toList());
+            return new DataUnit(arr, DataType.ARRAY);
+        } else if (left.getType() == DataType.OBJECT && right.getType() == DataType.STRING) {
+            Map<String, DataUnit> obj = new HashMap<>(left.getObject());
+            if (obj.containsKey(right.getString())) {
+                obj.remove(right.getString());
+            }
+            return new DataUnit(obj, DataType.OBJECT);
         }
 
         throw new InvalidTypeException(left.getType(), DataType.INT);

@@ -11,20 +11,20 @@ grammar StexLifeGrammar;
 program:	functionlist ;
 functionlist:	function+ ;
 
-function:	ID '(' paramlist ')' '{' stmt+ '}' ;
+function:	ID '(' paramlist ')' '{' stmt* '}' ;
 paramlist:  (ID (',' ID)*)? ;
 
 stmt:			(ifStmt|tryStmt|whileStmt|throwStmt|returnStmt
 					 |assignStmt|declareStmt|voidFunctionCall);
 					 
-ifStmt:		'if' '(' expression ')' '{' stmt+ '}' (elseIfStmt)* (elseBlock)? ;
-elseIfStmt:         'elseif' '(' expression ')' '{' stmt+ '}' ;
-elseBlock:			'else' '{' stmt+ '}' ;
+ifStmt:		'if' '(' expression ')' '{' stmt* '}' (elseIfStmt)* (elseBlock)? ;
+elseIfStmt:         'elseif' '(' expression ')' '{' stmt* '}' ;
+elseBlock:			'else' '{' stmt* '}' ;
 
-tryStmt:		'try' '{' stmt+ '}' catchBlock ;
-catchBlock:			'catch' '(' ID ')' '{' stmt+ '}' ;
+tryStmt:		'try' '{' stmt* '}' catchBlock ;
+catchBlock:			'catch' '(' ID ')' '{' stmt* '}' ;
 
-whileStmt:		'while' '(' expression ')' '{' stmt+ '}' ;
+whileStmt:		'while' '(' expression ')' '{' stmt* '}' ;
 
 throwStmt:		'throw' expression ';' ;
 returnStmt:	    'return' (expression)? ';' ;
@@ -34,7 +34,7 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|operation|operand|arrayAccess|array|object|functionCall) ;
+expression:      ('(' expression ')'|operation|operand|arrayAccess|array|object|functionCall|anonymousFunction) ;
 operationExpression:	('(' expression ')'|operand|arrayAccess|array|object|functionCall) ;
 
 operand:		(identifier|value);
@@ -46,6 +46,8 @@ object:				'{' (objectField (',' objectField)*)? '}';
 objectField:		ID (':' expression)? ;
 
 array:				'[' (expression (',' expression)*)? ']' ;
+
+anonymousFunction:  '(' paramlist ')' '{' stmt* '}' ;
 
 functionCall:		ID '(' functionCallArgs ')' ;
 functionCallArgs:	(expression (',' expression)*)? ;
