@@ -206,4 +206,55 @@ public class VMImplStmtTest {
         vm = new VMImpl(StexCodeParser.parse(code));
         vm.run("main");
     }
+
+    @Test
+    public void foreachLoopWithArray_shouldReturnSum() {
+        String code =
+                "main() {" +
+                        "  let a = [1, 2, 3];" +
+                        "  let sum = 0;" +
+                        "  foreach (let x in a) {" +
+                        "    sum = sum + x;" +
+                        "  } " +
+                        "  return sum;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(6L, result.getInt().longValue());
+    }
+
+    @Test
+    public void foreachLoopWithString_shouldReturnInvertedString() {
+        String code =
+                "main() {" +
+                        "  let str = \"foobar\";" +
+                        "  let inverted = \"\";" +
+                        "  foreach (let s in str) {" +
+                        "    inverted = s + inverted;" +
+                        "  } " +
+                        "  return inverted;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("raboof", result.getString());
+    }
+
+    @Test
+    public void foreachLoopWithObject_shouldConcatAllKeys() {
+        String code =
+                "main() {" +
+                        "  let obj = {b: 1, a: 1, c: 1};" +
+                        "  let concat = \"\";" +
+                        "  foreach (let k in obj) {" +
+                        "    concat = concat + k;" +
+                        "  } " +
+                        "  return concat;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("abc", result.getString());
+    }
 }

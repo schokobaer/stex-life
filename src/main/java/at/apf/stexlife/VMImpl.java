@@ -83,6 +83,8 @@ public class VMImpl {
             return runWhileStmt(stmt.whileStmt());
         } else if (stmt.forStmt() != null) {
             return runForStmt(stmt.forStmt());
+        } else if (stmt.foreachStm() != null) {
+            return runForeachStmt(stmt.foreachStm());
         } else if (stmt.returnStmt() != null) {
             return runReturnStmt(stmt.returnStmt());
         }
@@ -233,6 +235,39 @@ public class VMImpl {
             runAssignStmt(ctx.assignStmt());
         }
         stexFrame.leafeDataFrame();
+        return true;
+    }
+
+    private boolean runForeachStmt(StexLifeGrammarParser.ForeachStmContext ctx) {
+        DataUnit collection = evalExpression(ctx.expression());
+        if (collection.getType() != DataType.ARRAY && collection.getType() != DataType.STRING && collection.getType() != DataType.OBJECT) {
+            throw new InvalidTypeException(collection.getType(), DataType.ARRAY);
+        }
+        int len = collection.getType() == DataType.ARRAY ? collection.getArray().size() :
+                collection.getType() == DataType.STRING ? collection.getString().length() :
+                        collection.getObject().size();
+        for (int i = 0; i < len; i++) {
+            stexFrame.enterDataFrame();
+            DataUnit elem = collection.getType() == DataType.ARRAY ? collection.getArray().get(i) :
+                    collection.getType() == DataType.STRING ? new DataUnit(collection.getString().charAt(i) + "", DataType.STRING) :
+                            new DataUnit(collection.getObject().entrySet().stream().sorted((a, b) -> a.getKey().compareTo(b.getKey())).skip(i).findFirst().get().getKey(), DataType.STRING);
+
+            // declare loop variable
+            String name = ctx.ID().getText();
+            if (stexFrame.getDataFrame().contains(name)) {
+                throw new NameAlreadyDeclaredException(name);
+            }
+            stexFrame.getDataFrame().set(name, elem);
+
+            // stmt
+            for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
+                if (!runStmt(stmt)) {
+                    stexFrame.leafeDataFrame();
+                    return false;
+                }
+            }
+            stexFrame.leafeDataFrame();
+        }
         return true;
     }
 

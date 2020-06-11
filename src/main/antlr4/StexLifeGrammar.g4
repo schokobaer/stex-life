@@ -26,8 +26,8 @@ catchBlock:			'catch' '(' ID ')' '{' stmt* '}' ;
 
 whileStmt:		'while' '(' expression ')' '{' stmt* '}' ;
 
-forStmt:        'for' '(' 'let' ID '=' expression ';' expression ';' assignStmt ')' '{' stmt* '}' ;
-foreachStm:     'foreach' '(' 'let' ID 'in' expression ')' '{' stmt* '}' ;
+forStmt:        'for' '(' LET ID '=' expression ';' expression ';' assignStmt ')' '{' stmt* '}' ;
+foreachStm:     'foreach' '(' LET ID 'in' expression ')' '{' stmt* '}' ;
 
 throwStmt:		'throw' expression ';' ;
 returnStmt:	    'return' (expression)? ';' ;
