@@ -14,20 +14,23 @@ program:	function* ;
 function:	ID '(' paramList ')' '{' stmt* '}' ;
 paramList:  (ID (',' ID)*)? ;
 
-stmt:			(ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
+stmt:           (block|ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
 					 |assignStmt ';'|declareStmt|voidFunctionCall);
-					 
-ifStmt:		'if' '(' expression ')' '{' stmt* '}' (elseIfStmt)* (elseBlock)? ;
-elseIfStmt:         'elseif' '(' expression ')' '{' stmt* '}' ;
-elseBlock:			'else' '{' stmt* '}' ;
 
-tryStmt:		'try' '{' stmt* '}' catchBlock ;
-catchBlock:			'catch' '(' ID ')' '{' stmt* '}' ;
+block:          '{' stmt* '}' ;
 
-whileStmt:		'while' '(' expression ')' '{' stmt* '}' ;
+ifStmt:         'if' '(' expression ')' block (elseIfStmt)* (elseBlock)? ;
+elseIfStmt:     'elseif' '(' expression ')' block ;
+elseBlock:      'else' block ;
 
-forStmt:        'for' '(' LET ID '=' expression ';' expression ';' assignStmt ')' '{' stmt* '}' ;
-foreachStm:     'foreach' '(' LET ID 'in' expression ')' '{' stmt* '}' ;
+tryStmt:        'try' block catchBlock (finallyBlock)? ;
+catchBlock:	    'catch' '(' ID ')' block ;
+finallyBlock:   'finally' block ;
+
+whileStmt:		'while' '(' expression ')' block ;
+
+forStmt:        'for' '(' LET ID '=' expression ';' expression ';' assignStmt ')' block ;
+foreachStm:     'foreach' '(' LET ID 'in' expression ')' block ;
 
 throwStmt:		'throw' expression ';' ;
 returnStmt:	    'return' (expression)? ';' ;

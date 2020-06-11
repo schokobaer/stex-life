@@ -7,7 +7,6 @@ public class StexFrame {
     private StexFrame parent;
     private DataFrame dataFrame;
     private DataUnit result;
-    private DataUnit exception;
 
     public StexFrame(StexFrame parent) {
         this.parent = parent;
@@ -33,14 +32,6 @@ public class StexFrame {
 
     public DataUnit getResult() {
         return result;
-    }
-
-    public void setException(DataUnit exception) {
-        this.exception = exception;
-    }
-
-    public DataUnit getException() {
-        return exception;
     }
 
     public void enterDataFrame() {

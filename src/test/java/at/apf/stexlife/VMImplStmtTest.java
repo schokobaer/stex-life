@@ -257,4 +257,36 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.STRING, result.getType());
         Assert.assertEquals("abc", result.getString());
     }
+
+    @Test
+    public void blockShouldRunCorrectly() {
+        String code =
+                "main() {" +
+                        "  let a = 1;" +
+                        "  {" +
+                        "    let b = 2;" +
+                        "    a = a + b;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3L, result.getInt().longValue());
+    }
+
+    @Test(expected = NameNotFoundException.class)
+    public void blockVariableAfterBlockCall_shouldThrowNameException() {
+        String code =
+                "main() {" +
+                "  let a = 1;" +
+                "  {" +
+                "    let b = 2;" +
+                "    a = a + b;" +
+                "  }" +
+                "  return b;" +
+                "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+    }
 }

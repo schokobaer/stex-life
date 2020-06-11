@@ -80,7 +80,9 @@ public class VMImpl {
             return runDeclareStmt(stmt.declareStmt());
         } else if (stmt.assignStmt() != null) {
             return runAssignStmt(stmt.assignStmt());
-        }  else if (stmt.ifStmt() != null) {
+        }  else if (stmt.block() != null) {
+            return runBlock(stmt.block());
+        } else if (stmt.ifStmt() != null) {
             return runIfStmt(stmt.ifStmt());
         } else if (stmt.whileStmt() != null) {
             return runWhileStmt(stmt.whileStmt());
@@ -135,6 +137,18 @@ public class VMImpl {
         return true;
     }
 
+    private boolean runBlock(StexLifeGrammarParser.BlockContext ctx) {
+        stexFrame.enterDataFrame();
+        for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
+            if (!runStmt(stmt)) {
+                stexFrame.leafeDataFrame();
+                return false;
+            }
+        }
+        stexFrame.leafeDataFrame();
+        return true;
+    }
+
     private boolean runIfStmt(StexLifeGrammarParser.IfStmtContext ctx) {
         DataUnit decision = evalExpression(ctx.expression());
         if (decision.getType() != DataType.BOOL) {
@@ -142,14 +156,9 @@ public class VMImpl {
         }
         if (decision.getBool()) {
             // run stmt
-            stexFrame.enterDataFrame();
-            for (StexLifeGrammarParser.StmtContext ifStmt: ctx.stmt()) {
-                if (!runStmt(ifStmt)) {
-                    stexFrame.leafeDataFrame();
-                    return false;
-                }
+            if (!runBlock(ctx.block())) {
+                return false;
             }
-            stexFrame.leafeDataFrame();
         } else {
             boolean valid = false;
             for (StexLifeGrammarParser.ElseIfStmtContext elif: ctx.elseIfStmt()) {
@@ -159,27 +168,17 @@ public class VMImpl {
                 }
                 if (decision.getBool()) {
                     valid = true;
-                    stexFrame.enterDataFrame();
-                    for (StexLifeGrammarParser.StmtContext elifStmt: elif.stmt()) {
-                        if (!runStmt(elifStmt)) {
-                            stexFrame.leafeDataFrame();
-                            return false;
-                        }
+                    if (!runBlock(elif.block())) {
+                        return false;
                     }
-                    stexFrame.leafeDataFrame();
                     break;
                 }
             }
             if (!valid && ctx.elseBlock() != null) {
                 // run elseBlock.stmt
-                stexFrame.enterDataFrame();
-                for (StexLifeGrammarParser.StmtContext elStmt: ctx.elseBlock().stmt()) {
-                    if (!runStmt(elStmt)) {
-                        stexFrame.leafeDataFrame();
-                        return false;
-                    }
+                if (!runBlock(ctx.elseBlock().block())) {
+                    return false;
                 }
-                stexFrame.leafeDataFrame();
             }
         }
         return true;
@@ -194,14 +193,9 @@ public class VMImpl {
             if (!decision.getBool()) {
                 break;
             }
-            stexFrame.enterDataFrame();
-            for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
-                if (!runStmt(stmt)) {
-                    stexFrame.leafeDataFrame();
-                    return false;
-                }
+            if (!runBlock(ctx.block())) {
+                return false;
             }
-            stexFrame.leafeDataFrame();
         }
         return true;
     }
@@ -227,15 +221,10 @@ public class VMImpl {
             }
 
             // stmt
-            stexFrame.enterDataFrame();
-            for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
-                if (!runStmt(stmt)) {
-                    stexFrame.leafeDataFrame();
-                    stexFrame.leafeDataFrame();
-                    return false;
-                }
+            if (!runBlock(ctx.block())) {
+                stexFrame.leafeDataFrame();
+                return false;
             }
-            stexFrame.leafeDataFrame();
 
             // assign
             runAssignStmt(ctx.assignStmt());
@@ -266,11 +255,9 @@ public class VMImpl {
             stexFrame.getDataFrame().set(name, elem);
 
             // stmt
-            for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
-                if (!runStmt(stmt)) {
-                    stexFrame.leafeDataFrame();
-                    return false;
-                }
+            if (!runBlock(ctx.block())) {
+                stexFrame.leafeDataFrame();
+                return false;
             }
             stexFrame.leafeDataFrame();
         }
