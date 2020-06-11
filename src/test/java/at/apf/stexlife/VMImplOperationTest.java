@@ -292,4 +292,19 @@ public class VMImplOperationTest {
         Assert.assertEquals(DataType.BOOL, result.getType());
         Assert.assertTrue(result.getBool().booleanValue());
     }
+
+    @Test
+    public void callFunctionShouldWork() {
+        String code =
+                "main() {" +
+                "  return sum(1, 2);" +
+                "}" +
+                "sum(a, b) {" +
+                "  return a + b;" +
+                "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3L, result.getInt().longValue());
+    }
 }

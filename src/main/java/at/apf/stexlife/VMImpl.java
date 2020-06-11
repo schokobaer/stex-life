@@ -3,6 +3,7 @@ package at.apf.stexlife;
 import at.apf.stexlife.data.Converter;
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
+import at.apf.stexlife.data.FunctionWrapper;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 import at.apf.stexlife.runtime.Arithmetics;
 import at.apf.stexlife.runtime.DataFrame;
@@ -17,11 +18,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class VMImpl {
 
     private StexLifeGrammarParser.ProgramContext program;
     private StexFrame stexFrame;
+    private PluginRegistry pluginRegistry;
 
     StexFrame getStexFrame() {
         return stexFrame;
@@ -36,18 +39,17 @@ public class VMImpl {
     }
 
     public DataUnit run(String function, DataUnit[] data) {
-        Optional<StexLifeGrammarParser.FunctionContext> fun = program.functionlist().function().stream()
-                .filter(f -> f.ID().getText().equals(function) && f.paramlist().ID().size() == data.length)
+        Optional<StexLifeGrammarParser.FunctionContext> fun = program.function().stream()
+                .filter(f -> f.ID().getText().equals(function) && f.paramList().ID().size() == data.length)
                 .findFirst();
         if (fun.isPresent()) {
             stexFrame = new StexFrame(null, new DataFrame(null));
-            for (int i = 0; i < fun.get().paramlist().ID().size(); i++) {
-                stexFrame.getDataFrame().set(fun.get().paramlist().ID(i).getText(), data[i]);
+            for (int i = 0; i < fun.get().paramList().ID().size(); i++) {
+                stexFrame.getDataFrame().set(fun.get().paramList().ID(i).getText(), data[i]);
             }
-            runFunction(fun.get());
-            return stexFrame.getResult();
+            return runFunction(new FunctionWrapper(fun.get()));
         } else {
-            throw new NameNotFoundException(function + "(" + data.length + ")");
+            throw new NameNotFoundException(function + "{" + data.length + "}");
         }
     }
 
@@ -64,12 +66,13 @@ public class VMImpl {
         return dataUnit;
     }
 
-    private void runFunction(StexLifeGrammarParser.FunctionContext f) {
-        for (StexLifeGrammarParser.StmtContext stmt: f.stmt()) {
+    private DataUnit runFunction(FunctionWrapper f) {
+        for (StexLifeGrammarParser.StmtContext stmt: f.getStmt()) {
             if (!runStmt(stmt)) {
-                return;
+                return stexFrame.getResult();
             }
         }
+        return stexFrame.getResult();
     }
 
     private boolean runStmt(StexLifeGrammarParser.StmtContext stmt) {
@@ -116,11 +119,11 @@ public class VMImpl {
                 obj.put(ids.get(ids.size() - 1).getText(), value);
             }
         } else {
-            DataUnit arr = resolveIdentifier(ctx.assignee().arrayAccess().identifier());
+            DataUnit arr = resolveIdentifier(ctx.assignee().dynamicAccess().identifier());
             if (arr.getType() != DataType.ARRAY) {
                 throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
             }
-            DataUnit index = evalExpression(ctx.assignee().arrayAccess().expression());
+            DataUnit index = evalExpression(ctx.assignee().dynamicAccess().expression());
             if (index.getType() != DataType.INT) {
                 throw new InvalidTypeException(index.getType(), DataType.INT);
             }
@@ -287,10 +290,12 @@ public class VMImpl {
             return evalArray(e.array());
         } else if (e.object() != null) {
             return evalObject(e.object());
-        } else if (e.arrayAccess() != null) {
-            return evalArrayAccess(e.arrayAccess());
+        } else if (e.dynamicAccess() != null) {
+            return evalDynamicAccess(e.dynamicAccess());
         } else if (e.operation() != null) {
             return evalOperation(e.operation());
+        } else if (e.functionCall() != null) {
+            return evalFunctionCall(e.functionCall());
         }
 
         throw new RuntimeException("Unexpected operation expression");
@@ -305,8 +310,8 @@ public class VMImpl {
             return evalArray(e.array());
         } else if (e.object() != null) {
             return evalObject(e.object());
-        } else if (e.arrayAccess() != null) {
-            return evalArrayAccess(e.arrayAccess());
+        } else if (e.dynamicAccess() != null) {
+            return evalDynamicAccess(e.dynamicAccess());
         }
 
         throw new RuntimeException("Unexpected operation expression");
@@ -321,7 +326,7 @@ public class VMImpl {
         try {
             dataUnit = resolveIdentifier(ctx.identifier());
         } catch (NameNotFoundException ex) {
-            if (program.functionlist().function().stream()
+            if (program.function().stream()
                     .anyMatch(f -> f.ID().getText().equals(ctx.identifier().ID(0).getText()))) {
                 dataUnit = new DataUnit(ctx.identifier().ID(0).getText(), DataType.FUNCTION);
             }
@@ -353,7 +358,7 @@ public class VMImpl {
         return new DataUnit(obj, DataType.OBJECT);
     }
 
-    private DataUnit evalArrayAccess(StexLifeGrammarParser.ArrayAccessContext ctx) {
+    private DataUnit evalDynamicAccess(StexLifeGrammarParser.DynamicAccessContext ctx) {
         DataUnit arr = resolveIdentifier(ctx.identifier());
         DataUnit index = evalExpression(ctx.expression());
         if (arr.getType() == DataType.ARRAY && index.getType() == DataType.INT) {
@@ -368,8 +373,8 @@ public class VMImpl {
     }
 
     private DataUnit evalOperation(StexLifeGrammarParser.OperationContext ctx) {
-        if (ctx.notoperation() != null) {
-            DataUnit exp = evalExpression(ctx.notoperation().expression());
+        if (ctx.notOperation() != null) {
+            DataUnit exp = evalExpression(ctx.notOperation().expression());
             if (exp.getType() != DataType.BOOL) {
                 throw new InvalidTypeException(exp.getType(), DataType.BOOL);
             }
@@ -431,5 +436,58 @@ public class VMImpl {
         }
 
         throw new RuntimeException("Unexpected operator");
+    }
+
+    private DataUnit evalFunctionCall(StexLifeGrammarParser.FunctionCallContext ctx) {
+        /**
+         * 1. Look for name in dataFrame
+         * 2. Look for name in program.functionlist
+         * 3. Look for name in PluginRegistry
+         */
+
+        FunctionWrapper fw;
+
+        try {
+            DataUnit duf = resolveIdentifier(ctx.identifier());
+            if (duf.getType() != DataType.FUNCTION) {
+                throw new InvalidTypeException(duf.getType(), DataType.FUNCTION);
+            }
+            fw = duf.getFunction();
+        } catch (NameNotFoundException e) {
+            String name = ctx.identifier().ID().stream().map(tn -> tn.getText()).collect(Collectors.joining("."));
+            Optional<StexLifeGrammarParser.FunctionContext> op = program.function().stream()
+                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == ctx.argList().expression().size())
+                    .findFirst();
+            if (op.isPresent()) {
+                fw = new FunctionWrapper(op.get());
+            } else {
+                // Look in PluginRegistry
+                /*if (pluginRegistry.isRegistered(name, ctx.argList().expression().size())) {
+                    DataUnit[] args = new DataUnit[ctx.argList().expression().size()];
+                    for (int i = 0; i < args.length; i++) {
+                        args[i] = evalExpression(ctx.argList().expression(i));
+                    }
+                    return pluginRegistry.call(name, args);
+                } else {
+                    throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
+                }*/
+                throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
+            }
+        }
+
+        // eval args
+        DataFrame df = new DataFrame(null);
+        for (int i = 0; i < ctx.argList().expression().size(); i++) {
+            DataUnit value = evalExpression(ctx.argList().expression(i));
+            df.set(fw.getParamList().ID(i).getText(), value);
+        }
+
+        // call
+        stexFrame = new StexFrame(stexFrame, df);
+        DataUnit result = runFunction(fw);
+        stexFrame = stexFrame.getParent();
+
+
+        return result;
     }
 }

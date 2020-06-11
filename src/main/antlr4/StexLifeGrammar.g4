@@ -8,11 +8,11 @@ grammar StexLifeGrammar;
  * Parser Rules
  */
 
-program:	functionlist ;
-functionlist:	function+ ;
+program:	function* ;
 
-function:	ID '(' paramlist ')' '{' stmt* '}' ;
-paramlist:  (ID (',' ID)*)? ;
+
+function:	ID '(' paramList ')' '{' stmt* '}' ;
+paramList:  (ID (',' ID)*)? ;
 
 stmt:			(ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
 					 |assignStmt ';'|declareStmt|voidFunctionCall);
@@ -37,31 +37,31 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|operation|operand|arrayAccess|array|object|functionCall|anonymousFunction|functionRef) ;
-operationExpression:	('(' expression ')'|operand|arrayAccess|array|object|functionCall) ;
+expression:      ('(' expression ')'|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction|functionRef) ;
+operationExpression:	('(' expression ')'|operand|dynamicAccess|array|object|functionCall) ;
 
 operand:		(identifier|value);
 identifier:		ID ('.' ID)* ;
 value:			(INT|FLOAT|BOOLEAN|NULL|STRING) ;
-arrayAccess:	identifier '[' expression ']' ;
+dynamicAccess:	identifier '[' expression ']' ;
 
 object:				'{' (objectField (',' objectField)*)? '}';
 objectField:		ID (':' expression)? ;
 
 array:				'[' (expression (',' expression)*)? ']' ;
 
-anonymousFunction:  '(' paramlist ')' '{' stmt* '}' ;
+anonymousFunction:  '(' paramList ')' '{' stmt* '}' ;
 functionRef:        ID '{' INT '}' ;
 
-functionCall:		ID '(' functionCallArgs ')' ;
-functionCallArgs:	(expression (',' expression)*)? ;
+functionCall:		identifier '(' argList ')' ;
+argList:            (expression (',' expression)*)? ;
 
 operation:		    operationExpression operationType expression
-					| notoperation ;
-notoperation:		'not' expression ;
+					| notOperation ;
+notOperation:		'not' expression ;
 operationType:		(ADD|SUB|MUL|DIV|MOD|EQU|NEQ|GRT|GRE|SMT|SME|IN|AND|OR) ;
 
-assignee:			identifier | arrayAccess ;
+assignee:			identifier | dynamicAccess ;
 
 
 

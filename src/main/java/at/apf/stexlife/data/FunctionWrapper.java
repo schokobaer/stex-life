@@ -21,8 +21,8 @@ public class FunctionWrapper {
         return named != null ? named.ID().getText() : "anonymous";
     }
 
-    public StexLifeGrammarParser.ParamlistContext getParamList() {
-        return named != null ? named.paramlist() : anonymous.paramlist();
+    public StexLifeGrammarParser.ParamListContext getParamList() {
+        return named != null ? named.paramList() : anonymous.paramList();
     }
 
     public List<StexLifeGrammarParser.StmtContext> getStmt() {
