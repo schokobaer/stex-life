@@ -8,11 +8,14 @@ grammar StexLifeGrammar;
  * Parser Rules
  */
 
-program:	function* ;
+program:	    include* function* ;
 
+include:        'from' includeSource 'import' ID (',' ID)* ';';
+includeDeclaration: ID ('as' ID)? ; // TODO: Support renaming
+includeSource:  (ID|STRING) ;
 
-function:	ID '(' paramList ')' '{' stmt* '}' ;
-paramList:  (ID (',' ID)*)? ;
+function:       ('export')? ID '(' paramList ')' '{' stmt* '}' ;
+paramList:      (ID (',' ID)*)? ;
 
 stmt:           (block|ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
 					 |assignStmt ';'|declareStmt|voidFunctionCall);

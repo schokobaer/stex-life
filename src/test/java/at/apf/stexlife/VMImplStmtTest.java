@@ -3,6 +3,7 @@ package at.apf.stexlife;
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
 import at.apf.stexlife.exception.UncaughtExceptionException;
+import at.apf.stexlife.plugin.HugoPlugin;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.junit.Assert;
@@ -456,5 +457,63 @@ public class VMImplStmtTest {
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(1L, result.getInt().longValue());
+    }
+
+    @Test
+    public void pluginVoidFunctionCall_shouldClearArray() {
+        String code =
+                "from hugo import clear;" +
+                "main() {" +
+                "  let arr = [1, 2, 3];" +
+                "  clear(arr);" +
+                "  return arr;" +
+                "}";
+        PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
+        pluginRegistry.register(new HugoPlugin());
+        vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
+        vm.loadIncludes();
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(0, result.getArray().size());
+    }
+
+    @Test
+    public void pluginFunctionCall_shouldReturnNewArray() {
+        String code =
+                "from hugo import flip;" +
+                        "main() {" +
+                        "  let arr = [1, 2, 3];" +
+                        "  return flip(arr);" +
+                        "}";
+        PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
+        pluginRegistry.register(new HugoPlugin());
+        vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
+        vm.loadIncludes();
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(3, result.getArray().size());
+        Assert.assertEquals(3, result.getArray().get(0).getInt().intValue());
+        Assert.assertEquals(2, result.getArray().get(1).getInt().intValue());
+        Assert.assertEquals(1, result.getArray().get(2).getInt().intValue());
+    }
+
+    @Test
+    public void throwInPluginFunctionCall_shouldGetHandled() {
+        String code =
+                "from hugo import flip;" +
+                        "main() {" +
+                        "  try {" +
+                        "    return flip(1);" +
+                        "  } catch(e) {" +
+                        "    return 0;" +
+                        "  }" +
+                        "}";
+        PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
+        pluginRegistry.register(new HugoPlugin());
+        vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
+        vm.loadIncludes();
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(0, result.getInt().intValue());
     }
 }

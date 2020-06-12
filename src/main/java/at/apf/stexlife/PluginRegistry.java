@@ -6,17 +6,25 @@ public interface PluginRegistry {
 
     /**
      * Searchs for the function by name and amount of args and runs it.
-     * @param name Name of the function.
+     * @param function Name of the function.
      * @param args Argument list for the function call.
      * @return The result of the function execution.
      */
-    DataUnit call(String name, DataUnit[] args);
+    DataUnit call(String module, String function, DataUnit[] args);
 
     /**
      * Checks if the given function name with the given parameter list length is registered.
-     * @param name Name of the function.
+     * @param function Name of the function.
      * @param paramLength Length of the parameter list.
      * @return true if registered, otherwise false.
      */
-    boolean isRegistered(String name, int paramLength);
+    boolean isRegistered(String module, String function, int paramLength);
+
+    /**
+     * Analyzes the {@link at.apf.stexlife.plugin.StexLifeModule} annotated object for
+     * {@link at.apf.stexlife.plugin.StexLifeFunction} annotated methods, and adds them to the registry.
+     * @param obj An {@link at.apf.stexlife.plugin.StexLifeModule} annotatedobject with
+     *            {@link at.apf.stexlife.plugin.StexLifeFunction} annotated methods.
+     */
+    void register(Object obj);
 }

@@ -27,6 +27,7 @@ public class VMImpl {
     private StexLifeGrammarParser.ProgramContext program;
     private StexFrame stexFrame;
     private PluginRegistry pluginRegistry;
+    private Map<String, String> includes = new HashMap<>();
 
     StexFrame getStexFrame() {
         return stexFrame;
@@ -34,6 +35,12 @@ public class VMImpl {
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program) {
         this.program = program;
+        this.pluginRegistry = new PluginRegistryImpl();
+    }
+
+    public VMImpl(StexLifeGrammarParser.ProgramContext program, PluginRegistry pluginRegistry) {
+        this.program = program;
+        this.pluginRegistry = pluginRegistry;
     }
 
     public DataUnit run(String function) throws UncaughtExceptionException {
@@ -70,6 +77,17 @@ public class VMImpl {
             dataUnit = dataUnit.getObject().get(name);
         }
         return dataUnit;
+    }
+
+    public void loadIncludes() {
+        program.include().forEach(i -> {
+            i.ID().forEach(f -> {
+                if (includes.containsKey(f.getText())) {
+                    throw new NameAlreadyDeclaredException(f.getText());
+                }
+                includes.put(f.getText(), i.includeSource().ID().getText());
+            });
+        });
     }
 
     private DataUnit runFunction(FunctionWrapper f) {
@@ -499,13 +517,11 @@ public class VMImpl {
                 fw = new FunctionWrapper(op.get());
             } else {
                 // Look in PluginRegistry
-                // TODO: Uncomment
-                /*if (pluginRegistry.isRegistered(name, ctx.argList().expression().size())) {
-                    fw = new FunctionWrapper(name);
-                } else {
+                if (!includes.containsKey(name) ||
+                        !pluginRegistry.isRegistered(includes.get(name), name, ctx.argList().expression().size())) {
                     throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
-                }*/
-                throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
+                }
+                fw = new FunctionWrapper(name);
             }
         }
 
@@ -526,11 +542,11 @@ public class VMImpl {
                 fw = new FunctionWrapper(op.get());
             } else {
                 // find plugin function
-                // TODO: Uncomment
-                /*if (pluginRegistry.isRegistered(name, ctx.argList().expression().size())) {
-                    return pluginRegistry.call(name, args);
-                }*/
-                throw new NameNotFoundException(name);
+                if (!includes.containsKey(name) ||
+                        !pluginRegistry.isRegistered(includes.get(name), name, ctx.argList().expression().size())) {
+                    throw new NameNotFoundException(name);
+                }
+                return pluginRegistry.call(includes.get(name), name, args);
             }
         }
 
