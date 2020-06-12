@@ -14,7 +14,7 @@ include:        'from' includeSource 'import' includeDeclaration (',' includeDec
 includeDeclaration: ID ('as' ID)? ;
 includeSource:  (ID|STRING) ;
 
-function:       ('export')? ID '(' paramList ')' '{' stmt* '}' ;
+function:       (EXPORT)? ID '(' paramList ')' '{' stmt* '}' ;
 paramList:      (ID (',' ID)*)? ;
 
 stmt:           (block|ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
@@ -43,11 +43,12 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction) ;
+expression:      ('(' expression ')'|/*concatExpression*/|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction) ;
 operationExpression:	('(' expression ')'|operand|dynamicAccess|array|object|functionCall) ;
+//concatExpression: (functionCall|array|dynamicAccess|object) '.' expression;
 
 operand:		(identifier|value);
-identifier:		ID ('.' ID)* ;
+identifier:		(ID|SELF) ('.' ID)* ;
 value:			(INT|FLOAT|BOOLEAN|NULL|STRING) ;
 dynamicAccess:	identifier '[' expression ']' ;
 
@@ -84,6 +85,8 @@ STRING		:	'"' (. | '\"')*? '"' ;
 
 LET         : 'let' ;
 CONST       : 'con' ;
+SELF        : 'self' ;
+EXPORT      : 'export' ;
 
 ADD : '+' ;
 SUB : '-' ;

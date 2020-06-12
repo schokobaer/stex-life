@@ -69,8 +69,10 @@ public class VMImpl {
     }
 
     private DataUnit resolveIdentifier(StexLifeGrammarParser.IdentifierContext ctx) {
+
         List<TerminalNode> ids = ctx.ID();
         DataUnit dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
+
         for (int i = 1; i < ids.size(); i++) {
             String name = ids.get(i).getText();
             if (dataUnit.getType() != DataType.OBJECT || !dataUnit.getObject().containsKey(name)) {
@@ -508,19 +510,23 @@ public class VMImpl {
          */
 
         FunctionWrapper fw;
+        int argListSize = (int) ctx.argList().expression().stream().map(exp -> exp.getText()).filter(exp -> !exp.isEmpty()).count();
 
         try {
+            // Function in variable
             DataUnit duf = resolveIdentifier(ctx.identifier());
             if (duf.getType() != DataType.FUNCTION) {
                 throw new InvalidTypeException(duf.getType(), DataType.FUNCTION);
             }
             fw = duf.getFunction();
         } catch (NameNotFoundException e) {
+            // local or imported function
             String name = ctx.identifier().ID().stream().map(tn -> tn.getText()).collect(Collectors.joining("."));
             Optional<StexLifeGrammarParser.FunctionContext> op = program.function().stream()
-                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == ctx.argList().expression().size())
+                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == argListSize)
                     .findFirst();
             if (op.isPresent()) {
+                // local function
                 fw = new FunctionWrapper(op.get());
             } else {
                 // Look in PluginRegistry
@@ -533,7 +539,7 @@ public class VMImpl {
         }
 
         // eval args
-        DataUnit[] args = new DataUnit[ctx.argList().expression().size()];
+        DataUnit[] args = new DataUnit[argListSize];
         for (int i = 0; i < args.length; i++) {
             args[i] = evalExpression(ctx.argList().expression(i));
         }
@@ -543,7 +549,7 @@ public class VMImpl {
             // find local function
             String name = fw.getName();
             Optional<StexLifeGrammarParser.FunctionContext> op = program.function().stream()
-                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == ctx.argList().expression().size())
+                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == argListSize)
                     .findFirst();
             if (op.isPresent()) {
                 fw = new FunctionWrapper(op.get());
@@ -562,8 +568,26 @@ public class VMImpl {
             df.set(fw.getParamList().ID(i).getText(), args[i]);
         }
 
+        // Find context of invocation
+        DataUnit self = null;
+        if (ctx.identifier().SELF() != null && ctx.identifier().ID().size() > 0 || ctx.identifier().ID().size() > 1) {
+            List<TerminalNode> ids = ctx.identifier().ID();
+            int start = 0;
+            if (ctx.identifier().SELF() != null) {
+                self = stexFrame.getSelf();
+            } else {
+                self = stexFrame.getDataFrame().get(ids.get(0).getText());
+                start = 1;
+            }
+            for (int i = start; i < ids.size() - 1; i++) {
+                String name = ids.get(i).getText();
+                self = self.getObject().get(name);
+            }
+        }
+
         // call
         stexFrame = new StexFrame(stexFrame, df);
+        stexFrame.setSelf(self);
         DataUnit result = runFunction(fw);
         stexFrame = stexFrame.getParent();
 

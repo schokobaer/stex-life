@@ -6,6 +6,7 @@ public class StexFrame {
 
     private StexFrame parent;
     private DataFrame dataFrame;
+    private DataUnit self;
     private DataUnit result;
 
     public StexFrame(StexFrame parent) {
@@ -43,5 +44,13 @@ public class StexFrame {
             throw new RuntimeException("Top DataFrame can not be left");
         }
         dataFrame = dataFrame.getParent();
+    }
+
+    public void setSelf(DataUnit self) {
+        this.self = self;
+    }
+
+    public DataUnit getSelf() {
+        return self;
     }
 }
