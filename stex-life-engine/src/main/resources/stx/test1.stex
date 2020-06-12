@@ -1,0 +1,11 @@
+function main() {
+    let a = 0;
+    let b = "asdf";
+    let c = true;
+    let d = null;
+    let e = 1.23;
+    let f = [1, "asdf", true];
+    let g = {id: 1, name: "foo"};
+
+    let h = 0;
+}

@@ -5,30 +5,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>at.apf.stexlife</groupId>
-    <artifactId>stex-life-engine</artifactId>
+    <artifactId>stex-life</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>stex-life-engine</module>
+        <module>stex-life-api</module>
+        <module>stex-life-parser</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <antlr4.visitor>true</antlr4.visitor>
-        <antlr4.listener>true</antlr4.listener>
     </properties>
 
-
     <dependencies>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>4.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.10</version>
-        </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -39,22 +30,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.3</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <!--<outputDirectory>src/main/java/at/andreasfend/stex/parser/antlr4</outputDirectory>-->
-                        </configuration>
-                        <id>antlr</id>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
