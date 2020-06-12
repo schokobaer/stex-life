@@ -14,6 +14,8 @@ import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import at.apf.stexlife.runtime.exception.StexLifeException;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +29,7 @@ public class VMImpl {
     private StexLifeGrammarParser.ProgramContext program;
     private StexFrame stexFrame;
     private PluginRegistry pluginRegistry;
-    private Map<String, String> includes = new HashMap<>();
+    private Map<String, Pair<String, String>> includes = new HashMap<>(); // <alias, <module, function>>
 
     StexFrame getStexFrame() {
         return stexFrame;
@@ -81,11 +83,12 @@ public class VMImpl {
 
     public void loadIncludes() {
         program.include().forEach(i -> {
-            i.ID().forEach(f -> {
-                if (includes.containsKey(f.getText())) {
-                    throw new NameAlreadyDeclaredException(f.getText());
+            i.includeDeclaration().forEach(dec -> {
+                String usedName = dec.ID().size() == 2 ? dec.ID(1).getText() : dec.ID(0).getText();
+                if (includes.containsKey(usedName)) {
+                    throw new NameAlreadyDeclaredException(usedName);
                 }
-                includes.put(f.getText(), i.includeSource().ID().getText());
+                includes.put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID(0).getText()));
             });
         });
     }
@@ -518,7 +521,7 @@ public class VMImpl {
             } else {
                 // Look in PluginRegistry
                 if (!includes.containsKey(name) ||
-                        !pluginRegistry.isRegistered(includes.get(name), name, ctx.argList().expression().size())) {
+                        !pluginRegistry.isRegistered(includes.get(name).getLeft(), includes.get(name).getRight(), ctx.argList().expression().size())) {
                     throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
                 }
                 fw = new FunctionWrapper(name);
@@ -543,10 +546,10 @@ public class VMImpl {
             } else {
                 // find plugin function
                 if (!includes.containsKey(name) ||
-                        !pluginRegistry.isRegistered(includes.get(name), name, ctx.argList().expression().size())) {
+                        !pluginRegistry.isRegistered(includes.get(name).getLeft(), includes.get(name).getRight(), ctx.argList().expression().size())) {
                     throw new NameNotFoundException(name);
                 }
-                return pluginRegistry.call(includes.get(name), name, args);
+                return pluginRegistry.call(includes.get(name).getLeft(), includes.get(name).getRight(), args);
             }
         }
 

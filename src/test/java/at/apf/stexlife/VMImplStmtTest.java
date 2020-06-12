@@ -463,11 +463,11 @@ public class VMImplStmtTest {
     public void pluginVoidFunctionCall_shouldClearArray() {
         String code =
                 "from hugo import clear;" +
-                "main() {" +
-                "  let arr = [1, 2, 3];" +
-                "  clear(arr);" +
-                "  return arr;" +
-                "}";
+                        "main() {" +
+                        "  let arr = [1, 2, 3];" +
+                        "  clear(arr);" +
+                        "  return arr;" +
+                        "}";
         PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
         pluginRegistry.register(new HugoPlugin());
         vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
@@ -501,13 +501,13 @@ public class VMImplStmtTest {
     public void throwInPluginFunctionCall_shouldGetHandled() {
         String code =
                 "from hugo import flip;" +
-                        "main() {" +
-                        "  try {" +
-                        "    return flip(1);" +
-                        "  } catch(e) {" +
-                        "    return 0;" +
-                        "  }" +
-                        "}";
+                "main() {" +
+                "  try {" +
+                "    return flip(1);" +
+                "  } catch(e) {" +
+                "    return 0;" +
+                "  }" +
+                "}";
         PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
         pluginRegistry.register(new HugoPlugin());
         vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
@@ -515,5 +515,23 @@ public class VMImplStmtTest {
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(0, result.getInt().intValue());
+    }
+
+    @Test
+    public void aliasedPluginVoidFunctionCall_shouldClearArray() {
+        String code =
+                "from hugo import clear as trash;" +
+                        "main() {" +
+                        "  let arr = [1, 2, 3];" +
+                        "  trash(arr);" +
+                        "  return arr;" +
+                        "}";
+        PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
+        pluginRegistry.register(new HugoPlugin());
+        vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
+        vm.loadIncludes();
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(0, result.getArray().size());
     }
 }

@@ -10,8 +10,8 @@ grammar StexLifeGrammar;
 
 program:	    include* function* ;
 
-include:        'from' includeSource 'import' ID (',' ID)* ';';
-includeDeclaration: ID ('as' ID)? ; // TODO: Support renaming
+include:        'from' includeSource 'import' includeDeclaration (',' includeDeclaration)* ';';
+includeDeclaration: ID ('as' ID)? ;
 includeSource:  (ID|STRING) ;
 
 function:       ('export')? ID '(' paramList ')' '{' stmt* '}' ;

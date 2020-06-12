@@ -27,4 +27,10 @@ public interface PluginRegistry {
      *            {@link at.apf.stexlife.plugin.StexLifeFunction} annotated methods.
      */
     void register(Object obj);
+
+    /**
+     * Registers all gives objects.
+     * @param bundle Bundle of plugin objects.
+     */
+    void register(Object[] bundle);
 }

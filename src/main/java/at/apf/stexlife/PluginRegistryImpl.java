@@ -86,4 +86,11 @@ public class PluginRegistryImpl implements PluginRegistry {
 
         registry.put(ann.value(), obj);
     }
+
+    @Override
+    public void register(Object[] bundle) {
+        for (Object o: bundle) {
+            register(o);
+        }
+    }
 }

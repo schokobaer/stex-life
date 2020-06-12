@@ -8,7 +8,7 @@ public interface StexLifeVM {
 
     /**
      * TODOS:
-     *  - Add try/catch statement
-     *  - Support for native functions (maybe modules)
+     *  - Add 'this' to object functions
+     *  - Add quickAssignments (x++, x--, x+=, ++x)
      */
 }
