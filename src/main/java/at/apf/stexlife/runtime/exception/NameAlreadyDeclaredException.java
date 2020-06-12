@@ -1,8 +1,6 @@
 package at.apf.stexlife.runtime.exception;
 
-public class NameAlreadyDeclaredException extends RuntimeException {
-    public NameAlreadyDeclaredException() {
-    }
+public class NameAlreadyDeclaredException extends StexLifeException {
 
     public NameAlreadyDeclaredException(String message) {
         super(message);

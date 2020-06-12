@@ -2,6 +2,7 @@ package at.apf.stexlife;
 
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
+import at.apf.stexlife.exception.UncaughtExceptionException;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.junit.Assert;
@@ -310,7 +311,7 @@ public class VMImplOperationTest {
     }
 
     @Test(expected = NameNotFoundException.class)
-    public void unknownFunctionCall_shouldThrowNameException() {
+    public void unknownFunctionCall_shouldThrowNameException() throws Throwable {
         String code =
                 "main() {" +
                         "  return sumr(1, 2);" +
@@ -319,7 +320,11 @@ public class VMImplOperationTest {
                         "  return a + b;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        DataUnit result = vm.run("main");
+        try {
+            DataUnit result = vm.run("main");
+        } catch (UncaughtExceptionException e) {
+            throw e.getCause();
+        }
     }
 
     @Test

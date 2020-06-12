@@ -1,9 +1,6 @@
 package at.apf.stexlife.runtime.exception;
 
-public class NameNotFoundException extends RuntimeException {
-
-    public NameNotFoundException() {
-    }
+public class NameNotFoundException extends StexLifeException {
 
     public NameNotFoundException(String message) {
         super(message);

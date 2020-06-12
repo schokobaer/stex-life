@@ -2,6 +2,7 @@ package at.apf.stexlife;
 
 import at.apf.stexlife.data.DataType;
 import at.apf.stexlife.data.DataUnit;
+import at.apf.stexlife.exception.UncaughtExceptionException;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.junit.Assert;
@@ -194,7 +195,7 @@ public class VMImplStmtTest {
     }
 
     @Test(expected = NameNotFoundException.class)
-    public void loopVariableUsageAfterForLoop_shouldThrowNameException() {
+    public void loopVariableUsageAfterForLoop_shouldThrowNameException() throws Throwable {
         String code =
                 "main() {" +
                         "  let a = 0;" +
@@ -204,7 +205,11 @@ public class VMImplStmtTest {
                         "  return i;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
+        try {
+            vm.run("main");
+        } catch (UncaughtExceptionException e) {
+            throw e.getCause();
+        }
     }
 
     @Test
@@ -276,17 +281,180 @@ public class VMImplStmtTest {
     }
 
     @Test(expected = NameNotFoundException.class)
-    public void blockVariableAfterBlockCall_shouldThrowNameException() {
+    public void blockVariableAfterBlockCall_shouldThrowNameException() throws Throwable {
         String code =
                 "main() {" +
-                "  let a = 1;" +
-                "  {" +
-                "    let b = 2;" +
-                "    a = a + b;" +
-                "  }" +
-                "  return b;" +
-                "}";
+                        "  let a = 1;" +
+                        "  {" +
+                        "    let b = 2;" +
+                        "    a = a + b;" +
+                        "  }" +
+                        "  return b;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        try {
+            DataUnit result = vm.run("main");
+        } catch (UncaughtExceptionException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test
+    public void afterThrow_shouldCatchBlockGetExecuted() {
+        String code =
+                "main() {" +
+                        "  try {" +
+                        "    let a = 0;" +
+                        "    throw {msg:\"foo\"};" +
+                        "  } catch(e) {" +
+                        "    return e.msg;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
         vm = new VMImpl(StexCodeParser.parse(code));
         DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("foo", result.getString());
+    }
+
+    @Test
+    public void afterThrowInFunction_shouldCatchBlockGetExecuted() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  try {" +
+                        "    bar();" +
+                        "  } catch(e) {" +
+                        "    a = a + 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}" +
+                        "bar() { throw {msg:\"foo\"}; }";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
+    }
+
+    @Test
+    public void catchBlock_shouldNotGetExecuted() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  try {" +
+                        "    a = 3;" +
+                        "  } catch(e) {" +
+                        "    a = 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3L, result.getInt().longValue());
+    }
+
+    @Test
+    public void finallyBlock_shouldGetExecutedAfterTryWithoutReturn() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  try {" +
+                        "    a = 3;" +
+                        "  } catch(e) {" +
+                        "    a = 1;" +
+                        "  } finally {" +
+                        "    a = a + 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(4L, result.getInt().longValue());
+    }
+
+    @Test
+    public void finallyBlock_shouldGetExecutedAfterTryWithReturn() {
+        String code =
+                "main() {" +
+                        "  let obj = {a: 0};" +
+                        "  try {" +
+                        "    obj.a = 3;" +
+                        "    return obj;" +
+                        "  } catch(e) {" +
+                        "    obj.a = 1;" +
+                        "  } finally {" +
+                        "    obj.a = obj.a + 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.OBJECT, result.getType());
+        Assert.assertEquals(4L, result.getObject().get("a").getInt().longValue());
+    }
+
+    @Test
+    public void finallyBlock_shouldGetExecutedAfterCatchWithoutReturn() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  try {" +
+                        "    a = 3;" +
+                        "    throw {msg:\"foo\"};" +
+                        "  } catch(e) {" +
+                        "    a = 1;" +
+                        "  } finally {" +
+                        "    a = a + 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(2L, result.getInt().longValue());
+    }
+
+    @Test
+    public void finallyBlock_shouldGetExecutedAfterCatchWithReturn() {
+        String code =
+                "main() {" +
+                        "  let obj = {a: 0};" +
+                        "  try {" +
+                        "    obj.a = 3;" +
+                        "    throw {msg:\"foo\"};" +
+                        "  } catch(e) {" +
+                        "    obj.a = 1;" +
+                        "    return obj;" +
+                        "  } finally {" +
+                        "    obj.a = obj.a + 1;" +
+                        "  }" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.OBJECT, result.getType());
+        Assert.assertEquals(2L, result.getObject().get("a").getInt().longValue());
+    }
+
+    @Test
+    public void returnOfFinally_shouldReallyReturn() {
+        String code =
+                "main() {" +
+                        "  let obj = {a: 0};" +
+                        "  try {" +
+                        "    obj.a = 3;" +
+                        "  } catch(e) {" +
+                        "    obj.a = 1;" +
+                        "  } finally {" +
+                        "    return 1;" +
+                        "  }" +
+                        "  return 0;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
     }
 }
