@@ -423,6 +423,10 @@ public class VMImpl {
             return arr.getArray().get(index.getInt().intValue());
         }
 
+        if (arr.getType() == DataType.STRING && index.getType() == DataType.INT) {
+            return new DataUnit(arr.getString().charAt(index.getInt().intValue()) + "", DataType.STRING);
+        }
+
         if (arr.getType() == DataType.OBJECT && index.getType() == DataType.STRING) {
             return arr.getObject().get(index.getString());
         }

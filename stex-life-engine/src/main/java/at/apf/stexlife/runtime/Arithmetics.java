@@ -135,6 +135,9 @@ public class Arithmetics {
             }
         } else if (right.getType() == DataType.ARRAY) {
             return new DataUnit(right.getArray().stream().anyMatch(e -> e.equals(left)), DataType.BOOL);
+        } else if (right.getType() == DataType.OBJECT) {
+            DataType.expecting(left, DataType.STRING);
+            return new DataUnit(right.getObject().containsKey(left.getString()), DataType.BOOL);
         }
 
         throw new InvalidTypeException(left.getType(), DataType.INT);

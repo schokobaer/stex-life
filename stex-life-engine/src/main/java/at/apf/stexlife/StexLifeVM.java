@@ -10,5 +10,8 @@ public interface StexLifeVM {
      * TODOS:
      *  - Add 'this' to object functions
      *  - Add quickAssignments (x++, x--, x+=, ++x)
+     *  - Call stex functions from Plugin Function
+     *  - Introduce LIMITED type
+     *  - add a bundle with a single name
      */
 }

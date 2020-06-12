@@ -12,6 +12,7 @@
         <module>stex-life-engine</module>
         <module>stex-life-api</module>
         <module>stex-life-parser</module>
+        <module>stex-life-commons</module>
     </modules>
 
     <properties>
