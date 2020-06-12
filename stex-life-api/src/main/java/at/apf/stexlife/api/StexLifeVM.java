@@ -1,4 +1,4 @@
-package at.apf.stexlife;
+package at.apf.stexlife.api;
 
 import at.apf.stexlife.api.DataUnit;
 
@@ -6,13 +6,15 @@ public interface StexLifeVM {
 
     DataUnit run(String function);
 
-    DataUnit run(String function, DataUnit[] params);
+    DataUnit run(String function, DataUnit[] args);
+
+    DataUnit run(FunctionWrapper function, DataUnit[] args);
 
     void loadIncludes();
 
     /**
      * TODOS:
-     *  - Add 'this' to object functions
+     *  - Put Self Context into FunctionWrapper (operand Rule)
      *  - Add quickAssignments (x++, x--, x+=, ++x)
      *  - Call stex functions from Plugin Function
      *  - Introduce LIMITED type

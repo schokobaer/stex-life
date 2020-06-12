@@ -4,6 +4,7 @@ import at.apf.stexlife.api.Converter;
 import at.apf.stexlife.api.DataType;
 import at.apf.stexlife.api.DataUnit;
 import at.apf.stexlife.api.FunctionWrapper;
+import at.apf.stexlife.api.StexLifeVM;
 import at.apf.stexlife.api.exception.InvalidTypeException;
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.exception.UncaughtExceptionException;
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class VMImpl {
+public class VMImpl implements StexLifeVM {
 
     private StexLifeGrammarParser.ProgramContext program;
     private StexFrame stexFrame;
@@ -45,10 +46,12 @@ public class VMImpl {
         this.pluginRegistry = pluginRegistry;
     }
 
+    @Override
     public DataUnit run(String function) throws UncaughtExceptionException {
         return this.run(function, new DataUnit[0]);
     }
 
+    @Override
     public DataUnit run(String function, DataUnit[] data) throws UncaughtExceptionException {
         Optional<StexLifeGrammarParser.FunctionContext> fun = program.function().stream()
                 .filter(f -> f.ID().getText().equals(function) && f.paramList().ID().size() == data.length)
@@ -66,6 +69,54 @@ public class VMImpl {
         } else {
             throw new UncaughtExceptionException(new NameNotFoundException(function + "{" + data.length + "}"));
         }
+    }
+
+    @Override
+    public DataUnit run(FunctionWrapper function, DataUnit[] args) {
+        // TODO: if function is anonymous or function context: Create new Stack, set args, call it
+        // TODO: Else use plugin registry
+        FunctionWrapper fw = function;
+        if (function.isNamed()) {
+            if (includes.containsKey(function.getName()) &&
+                    pluginRegistry.isRegistered(includes.get(function.getName()).getLeft(),
+                            includes.get(function.getName()).getRight(), args.length)) {
+                return pluginRegistry.call(this, includes.get(function.getName()).getLeft(),
+                        includes.get(function.getName()).getRight(), args);
+            }
+
+            Optional<StexLifeGrammarParser.FunctionContext> op = program.function().stream()
+                    .filter(f -> f.ID().getText().equals(function.getName())
+                            && f.paramList().ID().size() == args.length).findAny();
+            if (op.isPresent()) {
+                fw = new FunctionWrapper(op.get());
+            } else {
+                throw new NameNotFoundException(function.getName());
+            }
+        }
+
+        DataFrame df = new DataFrame(null);
+        for (int i = 0; i < args.length; i++) {
+            df.set(fw.getParamList().ID(i).getText(), args[i]);
+        }
+
+        stexFrame = new StexFrame(stexFrame, df);
+        DataUnit result = runFunction(fw);
+        stexFrame = stexFrame.getParent();
+
+        return result;
+    }
+
+    @Override
+    public void loadIncludes() {
+        program.include().forEach(i -> {
+            i.includeDeclaration().forEach(dec -> {
+                String usedName = dec.ID().size() == 2 ? dec.ID(1).getText() : dec.ID(0).getText();
+                if (includes.containsKey(usedName)) {
+                    throw new NameAlreadyDeclaredException(usedName);
+                }
+                includes.put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID(0).getText()));
+            });
+        });
     }
 
     private DataUnit resolveIdentifier(StexLifeGrammarParser.IdentifierContext ctx) {
@@ -90,18 +141,6 @@ public class VMImpl {
             dataUnit = dataUnit.getObject().get(name);
         }
         return dataUnit;
-    }
-
-    public void loadIncludes() {
-        program.include().forEach(i -> {
-            i.includeDeclaration().forEach(dec -> {
-                String usedName = dec.ID().size() == 2 ? dec.ID(1).getText() : dec.ID(0).getText();
-                if (includes.containsKey(usedName)) {
-                    throw new NameAlreadyDeclaredException(usedName);
-                }
-                includes.put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID(0).getText()));
-            });
-        });
     }
 
     private DataUnit runFunction(FunctionWrapper f) {
@@ -394,6 +433,7 @@ public class VMImpl {
         try {
             dataUnit = resolveIdentifier(ctx.identifier());
         } catch (NameNotFoundException ex) {
+            // local function: no self context
             String name = ctx.identifier().ID(0).getText();
             if (program.function().stream()
                     .anyMatch(f -> f.ID().getText().equals(name))) {
@@ -568,7 +608,7 @@ public class VMImpl {
                         !pluginRegistry.isRegistered(includes.get(name).getLeft(), includes.get(name).getRight(), ctx.argList().expression().size())) {
                     throw new NameNotFoundException(name);
                 }
-                return pluginRegistry.call(includes.get(name).getLeft(), includes.get(name).getRight(), args);
+                return pluginRegistry.call(this, includes.get(name).getLeft(), includes.get(name).getRight(), args);
             }
         }
 

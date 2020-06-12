@@ -1,6 +1,7 @@
 package at.apf.stexlife;
 
 import at.apf.stexlife.api.DataUnit;
+import at.apf.stexlife.api.StexLifeVM;
 
 public interface PluginRegistry {
 
@@ -10,7 +11,7 @@ public interface PluginRegistry {
      * @param args Argument list for the function call.
      * @return The result of the function execution.
      */
-    DataUnit call(String module, String function, DataUnit[] args);
+    DataUnit call(StexLifeVM vm, String module, String function, DataUnit[] args);
 
     /**
      * Checks if the given function name with the given parameter list length is registered.

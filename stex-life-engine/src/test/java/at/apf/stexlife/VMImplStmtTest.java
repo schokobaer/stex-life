@@ -478,6 +478,27 @@ public class VMImplStmtTest {
     }
 
     @Test
+    public void pluginFunctionCallWithFunctionArgument_shouldRunInVM() {
+        String code =
+                "from hugo import sort;" +
+                        "main() {" +
+                        "  let arr = [5, 3, 6, 2];" +
+                        "  return sort(arr, (a,b){return a - b;});" +
+                        "}";
+        PluginRegistryImpl pluginRegistry = new PluginRegistryImpl();
+        pluginRegistry.register(new HugoPlugin());
+        vm = new VMImpl(StexCodeParser.parse(code), pluginRegistry);
+        vm.loadIncludes();
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(4, result.getArray().size());
+        Assert.assertEquals(2, result.getArray().get(0).getInt().intValue());
+        Assert.assertEquals(3, result.getArray().get(1).getInt().intValue());
+        Assert.assertEquals(5, result.getArray().get(2).getInt().intValue());
+        Assert.assertEquals(6, result.getArray().get(3).getInt().intValue());
+    }
+
+    @Test
     public void pluginFunctionCall_shouldReturnNewArray() {
         String code =
                 "from hugo import flip;" +

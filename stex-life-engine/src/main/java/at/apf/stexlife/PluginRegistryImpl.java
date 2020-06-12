@@ -1,6 +1,7 @@
 package at.apf.stexlife;
 
 import at.apf.stexlife.api.DataUnit;
+import at.apf.stexlife.api.StexLifeVM;
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.api.plugin.StexLifeFunction;
 import at.apf.stexlife.api.plugin.StexLifeModule;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class PluginRegistryImpl implements PluginRegistry {
@@ -18,12 +20,21 @@ public class PluginRegistryImpl implements PluginRegistry {
     private Map<String, Object> registry = new HashMap<>();
 
     @Override
-    public DataUnit call(String module, String function, DataUnit[] args) {
+    public DataUnit call(StexLifeVM vm, String module, String function, DataUnit[] args) {
         Object mod = registry.get(module);
         Method fun = findMethod(module, function, args.length);
 
         try {
-            return (DataUnit) fun.invoke(mod, args);
+            if (fun.getParameterCount() > 0 && fun.getParameterTypes()[0].equals(StexLifeVM.class)) {
+                Object[] args2 = new Object[args.length + 1];
+                args2[0] = vm;
+                for (int i = 0; i < args.length; i++) {
+                    args2[i + 1] = args[i];
+                }
+                return (DataUnit) fun.invoke(mod, args2);
+            } else {
+                return (DataUnit) fun.invoke(mod, args);
+            }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -46,11 +57,13 @@ public class PluginRegistryImpl implements PluginRegistry {
             return null;
         }
         Object mod = registry.get(module);
-        return Stream.of(mod.getClass().getDeclaredMethods())
+        Optional<Method> result = Stream.of(mod.getClass().getDeclaredMethods())
                 .filter(m -> m.isAnnotationPresent(StexLifeFunction.class)
                         && (m.getAnnotation(StexLifeFunction.class).value().equals(function) ||
                             (m.getAnnotation(StexLifeFunction.class).value().isEmpty() &&  m.getName().equals(function)))
-                        && m.getParameterCount() == paramLength).findAny().orElseGet(null);
+                        && Stream.of(m.getParameterTypes()).filter(p -> p.equals(DataUnit.class)).count() == paramLength).findAny();
+
+        return result.isPresent() ? result.get() : null;
     }
 
     @Override
@@ -72,7 +85,9 @@ public class PluginRegistryImpl implements PluginRegistry {
                 throw new RuntimeException("Return type must be either void or DataUnit");
             }
             if (Stream.of(m.getParameterTypes()).anyMatch(t -> !t.equals(DataUnit.class))) {
-                throw new RuntimeException("Only DataUnit parameter types are allowed");
+                if (!m.getParameterTypes()[0].equals(StexLifeVM.class)) {
+                    throw new RuntimeException("Only the first parameter can be a StexLifeVM, otherwise only DataUnit parameter types are allowed");
+                }
             }
             String name = m.getAnnotation(StexLifeFunction.class).value();
             name = name.isEmpty() ? m.getName() : name;
