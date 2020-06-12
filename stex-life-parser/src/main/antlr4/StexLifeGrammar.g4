@@ -85,7 +85,7 @@ STRING		:	'"' (. | '\"')*? '"' ;
 
 LET         : 'let' ;
 CONST       : 'con' ;
-SELF        : 'self' ;
+SELF        : 'this' ;
 EXPORT      : 'export' ;
 
 ADD : '+' ;

@@ -69,11 +69,20 @@ public class VMImpl {
     }
 
     private DataUnit resolveIdentifier(StexLifeGrammarParser.IdentifierContext ctx) {
-
         List<TerminalNode> ids = ctx.ID();
-        DataUnit dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
+        DataUnit dataUnit;
+        int start = 0;
+        if (ctx.SELF() != null) {
+            if (stexFrame.getSelf() == null) {
+                throw new NameNotFoundException("self");
+            }
+            dataUnit = stexFrame.getSelf();
+        } else {
+            dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
+            start = 1;
+        }
 
-        for (int i = 1; i < ids.size(); i++) {
+        for (int i = start; i < ids.size(); i++) {
             String name = ids.get(i).getText();
             if (dataUnit.getType() != DataType.OBJECT || !dataUnit.getObject().containsKey(name)) {
                 throw new NameNotFoundException(name);
