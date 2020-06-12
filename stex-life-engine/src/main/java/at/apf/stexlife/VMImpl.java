@@ -510,7 +510,7 @@ public class VMImpl {
          */
 
         FunctionWrapper fw;
-        int argListSize = (int) ctx.argList().expression().stream().map(exp -> exp.getText()).filter(exp -> !exp.isEmpty()).count();
+        int argListSize = ctx.argList().expression().size();
 
         try {
             // Function in variable

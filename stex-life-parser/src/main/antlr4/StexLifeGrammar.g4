@@ -43,7 +43,7 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|/*concatExpression*/|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction) ;
+expression:      ('(' expression ')'|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction) ;
 operationExpression:	('(' expression ')'|operand|dynamicAccess|array|object|functionCall) ;
 //concatExpression: (functionCall|array|dynamicAccess|object) '.' expression;
 
