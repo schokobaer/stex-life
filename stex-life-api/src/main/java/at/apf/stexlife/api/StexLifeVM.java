@@ -16,7 +16,6 @@ public interface StexLifeVM {
      * TODOS:
      *  - Put Self Context into FunctionWrapper (operand Rule)
      *  - Add quickAssignments (x++, x--, x+=, ++x)
-     *  - Call stex functions from Plugin Function
      *  - Introduce LIMITED type
      *  - add a bundle with a single name ???
      *  - other source files and export

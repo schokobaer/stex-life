@@ -125,7 +125,7 @@ public class VMImpl implements StexLifeVM {
         int start = 0;
         if (ctx.SELF() != null) {
             if (stexFrame.getSelf() == null) {
-                throw new NameNotFoundException("self");
+                throw new NameNotFoundException("this");
             }
             dataUnit = stexFrame.getSelf();
         } else {
@@ -198,22 +198,38 @@ public class VMImpl implements StexLifeVM {
             if (ids.size() == 1) {
                 stexFrame.getDataFrame().set(ids.get(0).getText(), value);
             } else {
-                Map<String, DataUnit> obj = stexFrame.getDataFrame().get(ids.get(0).getText()).getObject();
+                DataUnit obj = stexFrame.getDataFrame().get(ids.get(0).getText());
+                DataType.expecting(obj, DataType.OBJECT);
                 for (int i = 1; i < ids.size() - 1; i++) {
-                    obj = obj.get(ids.get(i).getText()).getObject();
+                    obj = obj.getObject().get(ids.get(i).getText());
+                    DataType.expecting(obj, DataType.OBJECT);
                 }
-                obj.put(ids.get(ids.size() - 1).getText(), value);
+                if (value.getType() == DataType.FUNCTION) {
+                    value.getFunction().setCtx(obj);
+                }
+                obj.getObject().put(ids.get(ids.size() - 1).getText(), value);
             }
         } else {
-            DataUnit arr = resolveIdentifier(ctx.assignee().dynamicAccess().identifier());
-            if (arr.getType() != DataType.ARRAY) {
-                throw new InvalidTypeException(arr.getType(), DataType.ARRAY);
-            }
+            // dynamic access
+            DataUnit data = resolveIdentifier(ctx.assignee().dynamicAccess().identifier());
             DataUnit index = evalExpression(ctx.assignee().dynamicAccess().expression());
-            if (index.getType() != DataType.INT) {
-                throw new InvalidTypeException(index.getType(), DataType.INT);
+
+            if (data.getType() == DataType.ARRAY) {
+                DataType.expecting(index, DataType.INT);
+                data.getArray().set(index.getInt().intValue(), value);
+                return true;
             }
-            arr.getArray().set(index.getInt().intValue(), value);
+
+            if (data.getType() == DataType.OBJECT) {
+                DataType.expecting(index, DataType.STRING);
+                if (value.getType() == DataType.FUNCTION) {
+                    value.getFunction().setCtx(data);
+                }
+                data.getObject().put(index.getString(), value);
+                return true;
+            }
+
+            DataType.expecting(data, DataType.ARRAY, DataType.OBJECT);
         }
         return true;
     }
@@ -441,7 +457,8 @@ public class VMImpl implements StexLifeVM {
             }
             else throw ex;
         }
-        if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY || dataUnit.getType() == DataType.FUNCTION) {
+        if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY ||
+                dataUnit.getType() == DataType.FUNCTION || dataUnit.getType() == DataType.LIMITED) {
             return new DataUnit(dataUnit.getContent(), dataUnit.getType());
         }
         return dataUnit.copy();
@@ -457,14 +474,19 @@ public class VMImpl implements StexLifeVM {
 
     private DataUnit evalObject(StexLifeGrammarParser.ObjectContext ctx) {
         Map<String, DataUnit> obj = new HashMap<>();
+        DataUnit o = new DataUnit(obj, DataType.OBJECT);
         for (StexLifeGrammarParser.ObjectFieldContext field: ctx.objectField()) {
             String name = field.ID().getText();
             if (obj.containsKey(name)) {
                 throw new NameAlreadyDeclaredException(name);
             }
-            obj.put(name, evalExpression(field.expression()));
+            DataUnit value = evalExpression(field.expression());
+            if (value.getType() == DataType.FUNCTION) {
+                value.getFunction().setCtx(o);
+            }
+            obj.put(name, value);
         }
-        return new DataUnit(obj, DataType.OBJECT);
+        return o;
     }
 
     private DataUnit evalDynamicAccess(StexLifeGrammarParser.DynamicAccessContext ctx) {
@@ -601,7 +623,9 @@ public class VMImpl implements StexLifeVM {
                     .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == argListSize)
                     .findFirst();
             if (op.isPresent()) {
+                DataUnit self = fw.getCtx();
                 fw = new FunctionWrapper(op.get());
+                fw.setCtx(self);
             } else {
                 // find plugin function
                 if (!includes.containsKey(name) ||
@@ -617,26 +641,9 @@ public class VMImpl implements StexLifeVM {
             df.set(fw.getParamList().ID(i).getText(), args[i]);
         }
 
-        // Find context of invocation
-        DataUnit self = null;
-        if (ctx.identifier().SELF() != null && ctx.identifier().ID().size() > 0 || ctx.identifier().ID().size() > 1) {
-            List<TerminalNode> ids = ctx.identifier().ID();
-            int start = 0;
-            if (ctx.identifier().SELF() != null) {
-                self = stexFrame.getSelf();
-            } else {
-                self = stexFrame.getDataFrame().get(ids.get(0).getText());
-                start = 1;
-            }
-            for (int i = start; i < ids.size() - 1; i++) {
-                String name = ids.get(i).getText();
-                self = self.getObject().get(name);
-            }
-        }
-
         // call
         stexFrame = new StexFrame(stexFrame, df);
-        stexFrame.setSelf(self);
+        stexFrame.setSelf(fw.getCtx());
         DataUnit result = runFunction(fw);
         stexFrame = stexFrame.getParent();
 

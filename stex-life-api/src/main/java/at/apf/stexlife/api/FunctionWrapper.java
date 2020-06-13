@@ -9,6 +9,7 @@ public class FunctionWrapper {
     private StexLifeGrammarParser.FunctionContext function;
     private StexLifeGrammarParser.AnonymousFunctionContext anonymous;
     private String named;
+    private DataUnit ctx;
 
     public FunctionWrapper(StexLifeGrammarParser.FunctionContext ctx) {
         function = ctx;
@@ -20,6 +21,14 @@ public class FunctionWrapper {
 
     public FunctionWrapper(String named) {
         this.named = named;
+    }
+
+    public DataUnit getCtx() {
+        return ctx;
+    }
+
+    public void setCtx(DataUnit ctx) {
+        this.ctx = ctx;
     }
 
     public boolean isNamed() {
