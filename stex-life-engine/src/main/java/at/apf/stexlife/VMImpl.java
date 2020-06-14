@@ -109,13 +109,22 @@ public class VMImpl implements StexLifeVM {
     @Override
     public void loadIncludes() {
         program.include().forEach(i -> {
-            i.includeDeclaration().forEach(dec -> {
-                String usedName = dec.ID().size() == 2 ? dec.ID(1).getText() : dec.ID(0).getText();
-                if (includes.containsKey(usedName)) {
-                    throw new NameAlreadyDeclaredException(usedName);
-                }
-                includes.put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID(0).getText()));
-            });
+            if (i.FROM() != null) {
+                i.includeDeclaration().forEach(dec -> {
+                    String usedName = dec.alias() != null ? dec.alias().ID().getText() : dec.ID().getText();
+                    if (includes.containsKey(usedName)) {
+                        throw new NameAlreadyDeclaredException(usedName);
+                    }
+                    includes.put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID().getText()));
+                });
+            } else {
+                // register all functions from module
+                String module = i.includeSource().ID().getText();
+                String alias = i.alias() != null ? i.alias().ID().getText() : module;
+                pluginRegistry.getRegistrations(module).stream().forEach(fun -> {
+                    includes.put(alias + "." + fun, new ImmutablePair<>(module, fun));
+                });
+            }
         });
     }
 
@@ -449,7 +458,7 @@ public class VMImpl implements StexLifeVM {
         try {
             dataUnit = resolveIdentifier(ctx.identifier());
         } catch (NameNotFoundException ex) {
-            // local function: no self context
+            // function
             String name = ctx.identifier().ID(0).getText();
             if (program.function().stream()
                     .anyMatch(f -> f.ID().getText().equals(name))) {

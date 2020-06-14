@@ -3,6 +3,8 @@ package at.apf.stexlife;
 import at.apf.stexlife.api.DataUnit;
 import at.apf.stexlife.api.StexLifeVM;
 
+import java.util.List;
+
 public interface PluginRegistry {
 
     /**
@@ -20,6 +22,13 @@ public interface PluginRegistry {
      * @return true if registered, otherwise false.
      */
     boolean isRegistered(String module, String function, int paramLength);
+
+    /**
+     * Returns all functions of a registered module.
+     * @param module name of the module.
+     * @return List of all functions of that module.
+     */
+    List<String> getRegistrations(String module);
 
     /**
      * Analyzes the {@link at.apf.stexlife.api.plugin.StexLifeModule} annotated object for

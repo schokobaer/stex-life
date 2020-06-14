@@ -5,6 +5,7 @@ import at.apf.stexlife.api.StexLifeVM;
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.api.plugin.StexLifeFunction;
 import at.apf.stexlife.api.plugin.StexLifeModule;
+import at.apf.stexlife.runtime.exception.NameNotFoundException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,11 +14,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PluginRegistryImpl implements PluginRegistry {
 
-    private Map<String, Object> registry = new HashMap<>();
+    private Map<String, Object> registry = new HashMap<>(); // <module, moduleObject>
 
     @Override
     public DataUnit call(StexLifeVM vm, String module, String function, DataUnit[] args) {
@@ -26,6 +28,7 @@ public class PluginRegistryImpl implements PluginRegistry {
 
         try {
             if (fun.getParameterCount() > 0 && fun.getParameterTypes()[0].equals(StexLifeVM.class)) {
+                // Function needs the VM instance
                 Object[] args2 = new Object[args.length + 1];
                 args2[0] = vm;
                 for (int i = 0; i < args.length; i++) {
@@ -50,6 +53,19 @@ public class PluginRegistryImpl implements PluginRegistry {
     @Override
     public boolean isRegistered(String module, String function, int paramLength) {
         return findMethod(module, function, paramLength) != null;
+    }
+
+    @Override
+    public List<String> getRegistrations(String module) {
+        if (!registry.containsKey(module)) {
+            throw new NameNotFoundException(module);
+        }
+
+        return Stream.of(registry.get(module).getClass().getDeclaredMethods())
+                .filter(m -> m.isAnnotationPresent(StexLifeFunction.class))
+                .map(m -> m.getAnnotation(StexLifeFunction.class).value().isEmpty() ?
+                        m.getName() : m.getAnnotation(StexLifeFunction.class)
+                .value()).collect(Collectors.toList());
     }
 
     private Method findMethod(String module, String function, int paramLength) {

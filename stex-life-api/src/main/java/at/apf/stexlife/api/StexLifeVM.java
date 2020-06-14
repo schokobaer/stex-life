@@ -14,10 +14,9 @@ public interface StexLifeVM {
 
     /**
      * TODOS:
-     *  - Put Self Context into FunctionWrapper (operand Rule)
      *  - Add quickAssignments (x++, x--, x+=, ++x)
      *  - Introduce LIMITED type
-     *  - add a bundle with a single name ???
+     *  - import a whole module (access with module.function)
      *  - other source files and export
      *  - concatExpression support (zB person().name)
      */

@@ -10,8 +10,9 @@ grammar StexLifeGrammar;
 
 program:	    include* function* ;
 
-include:        'from' includeSource 'import' includeDeclaration (',' includeDeclaration)* ';';
-includeDeclaration: ID ('as' ID)? ;
+include:        (FROM includeSource IMPORT includeDeclaration (',' includeDeclaration)*|IMPORT includeSource (alias)?) ';';
+includeDeclaration: ID (alias)? ;
+alias:          'as' ID ;
 includeSource:  (ID|STRING) ;
 
 function:       (EXPORT)? ID '(' paramList ')' '{' stmt* '}' ;
@@ -87,6 +88,8 @@ LET         : 'let' ;
 CONST       : 'con' ;
 SELF        : 'this' ;
 EXPORT      : 'export' ;
+FROM        : 'from' ;
+IMPORT      : 'import' ;
 
 ADD : '+' ;
 SUB : '-' ;
