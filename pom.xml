@@ -13,6 +13,7 @@
         <module>stex-life-api</module>
         <module>stex-life-parser</module>
         <module>stex-life-commons</module>
+        <module>stex-life-re</module>
     </modules>
 
     <properties>

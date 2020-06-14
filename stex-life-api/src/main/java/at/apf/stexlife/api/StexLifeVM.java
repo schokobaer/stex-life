@@ -19,5 +19,6 @@ public interface StexLifeVM {
      *  - import a whole module (access with module.function)
      *  - other source files and export
      *  - concatExpression support (zB person().name)
+     *  - EL (expression language ${}} in strings
      */
 }
