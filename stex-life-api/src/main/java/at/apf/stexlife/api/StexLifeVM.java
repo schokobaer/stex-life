@@ -2,6 +2,8 @@ package at.apf.stexlife.api;
 
 import at.apf.stexlife.api.DataUnit;
 
+import java.io.IOException;
+
 public interface StexLifeVM {
 
     DataUnit run(String function);
@@ -10,7 +12,7 @@ public interface StexLifeVM {
 
     DataUnit run(FunctionWrapper function, DataUnit[] args);
 
-    void loadIncludes();
+    void loadIncludes() throws IOException;
 
     /**
      * TODOS:

@@ -8,7 +8,9 @@ grammar StexLifeGrammar;
  * Parser Rules
  */
 
-program:	    include* function* ;
+program:	    (module)? include* function* ;
+
+module:         'module' identifier ';' ;
 
 include:        (FROM includeSource IMPORT includeDeclaration (',' includeDeclaration)*|IMPORT includeSource (alias)?) ';';
 includeDeclaration: ID (alias)? ;

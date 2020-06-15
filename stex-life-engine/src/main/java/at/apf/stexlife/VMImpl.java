@@ -8,10 +8,12 @@ import at.apf.stexlife.api.StexLifeVM;
 import at.apf.stexlife.api.exception.InvalidTypeException;
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.exception.UncaughtExceptionException;
+import at.apf.stexlife.parser.StexLifeCodeParser;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 import at.apf.stexlife.runtime.Arithmetics;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.ExpressionWrapper;
+import at.apf.stexlife.runtime.Module;
 import at.apf.stexlife.runtime.StexFrame;
 import at.apf.stexlife.runtime.StmtResult;
 import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
@@ -20,6 +22,8 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,18 +33,18 @@ import java.util.stream.Collectors;
 
 public class VMImpl implements StexLifeVM {
 
-    private StexLifeGrammarParser.ProgramContext program;
     private StexFrame stexFrame;
     private PluginRegistry pluginRegistry;
-    private Map<String, Pair<String, String>> includes = new HashMap<>(); // <alias, <module, function>>
+    private Map<String, Module> modules = new HashMap<>(); // <moduleName, Module>
+    private Module mainModule;
+    private static StexLifeCodeParser parser = new StexLifeCodeParser();
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program) {
-        this.program = program;
-        this.pluginRegistry = new PluginRegistryImpl();
+        this(program, new PluginRegistryImpl());
     }
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program, PluginRegistry pluginRegistry) {
-        this.program = program;
+        mainModule = new Module(program);
         this.pluginRegistry = pluginRegistry;
     }
 
@@ -105,25 +109,99 @@ public class VMImpl implements StexLifeVM {
     }
 
     @Override
-    public void loadIncludes() {
-        program.include().forEach(i -> {
+    public void loadIncludes() throws IOException {
+        /*mainModule.getProgram().include().forEach(i -> {
             if (i.FROM() != null) {
                 i.includeDeclaration().forEach(dec -> {
                     String usedName = dec.alias() != null ? dec.alias().ID().getText() : dec.ID().getText();
-                    if (includes.containsKey(usedName)) {
+                    if (mainModule.getIncludes().containsKey(usedName)) {
                         throw new NameAlreadyDeclaredException(usedName);
                     }
-                    includes.put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID().getText()));
+                    mainModule.getIncludes().put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID().getText()));
                 });
             } else {
                 // register all functions from module
                 String module = i.includeSource().ID().getText();
                 String alias = i.alias() != null ? i.alias().ID().getText() : module;
                 pluginRegistry.getRegistrations(module).stream().forEach(fun -> {
-                    includes.put(alias + "." + fun, new ImmutablePair<>(module, fun));
+                    mainModule.getIncludes().put(alias + "." + fun, new ImmutablePair<>(module, fun));
                 });
             }
-        });
+        });*/
+        loadModuleIncludes(mainModule);
+    }
+
+    /**
+     * Loads recursive the included stex modules.
+     * @param file
+     * @return
+     * @throws IOException
+     */
+    private Module loadModule(File file) throws IOException {
+        StexLifeGrammarParser.ProgramContext program = parser.parse(file);
+        Module module = new Module(program);
+        if (modules.containsKey(module.getName())) {
+            return modules.get(module.getName());
+        }
+        modules.put(module.getName(), module);
+
+        // load includes
+        loadModuleIncludes(module);
+
+        return module;
+    }
+
+    /**
+     * Adds all functions to the includes and loads recursive included modules.
+     * @param module Module to handle the includes.
+     * @throws IOException When a subModule which has to be loaded throws an IOException.
+     */
+    private void loadModuleIncludes(Module module) throws IOException {
+        for (StexLifeGrammarParser.IncludeContext i: module.getProgram().include()) {
+            if (i.FROM() != null) {
+                // only register selected ones
+                String moduleName;
+                if (i.includeSource().ID() != null) {
+                    // plugin functions
+                    moduleName = i.includeSource().ID().getText();
+                } else {
+                    // module
+                    String filePath = i.includeSource().STRING().getText();
+                    filePath = filePath.substring(1, filePath.length() - 1);
+                    Module subModule = loadModule(new File(filePath));
+                    moduleName = subModule.getName();
+                }
+                i.includeDeclaration().forEach(dec -> {
+                    String usedName = dec.alias() != null ? dec.alias().ID().getText() : dec.ID().getText();
+                    if (module.getIncludes().containsKey(usedName)) {
+                        throw new NameAlreadyDeclaredException(usedName);
+                    }
+                    module.getIncludes().put(usedName, new ImmutablePair<>(moduleName, dec.ID().getText()));
+                });
+            } else {
+                // register all functions from module
+                String moduleName;
+                String alias;
+                List<String> exportedFunctions;
+                if (i.includeSource().ID() != null) {
+                    // plugin functions
+                    moduleName = i.includeSource().ID().getText();
+                    exportedFunctions = pluginRegistry.getRegistrations(moduleName);
+                } else {
+                    // module
+                    String filePath = i.includeSource().STRING().getText();
+                    filePath = filePath.substring(1, filePath.length() - 1);
+                    Module subModule = loadModule(new File(filePath));
+                    moduleName = subModule.getName();
+                    exportedFunctions = subModule.getExportedFunctions();
+                }
+
+                alias = i.alias() != null ? i.alias().ID().getText() : moduleName;
+                exportedFunctions.stream().forEach(fun -> {
+                    module.getIncludes().put(alias + "." + fun, new ImmutablePair<>(moduleName, fun));
+                });
+            }
+        }
     }
 
     private DataUnit resolveIdentifier(StexLifeGrammarParser.IdentifierContext ctx) {

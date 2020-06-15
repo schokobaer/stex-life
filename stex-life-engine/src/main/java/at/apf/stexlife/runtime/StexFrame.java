@@ -8,14 +8,21 @@ public class StexFrame {
     private DataFrame dataFrame;
     private DataUnit self;
     private DataUnit result;
+    private Module module;
 
     public StexFrame(StexFrame parent) {
         this.parent = parent;
+        if (parent != null) {
+            module = parent.module;
+        }
         this.dataFrame = new DataFrame(null);
     }
 
     public StexFrame(StexFrame parent, DataFrame dataFrame) {
         this.parent = parent;
+        if (parent != null) {
+            module = parent.module;
+        }
         this.dataFrame = dataFrame;
     }
 
@@ -52,5 +59,13 @@ public class StexFrame {
 
     public DataUnit getSelf() {
         return self;
+    }
+
+    public Module getModule() {
+        return module;
+    }
+
+    public void setModule(Module module) {
+        this.module = module;
     }
 }
