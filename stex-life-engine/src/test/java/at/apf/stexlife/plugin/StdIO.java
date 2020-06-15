@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Scanner;
 
 @StexLifeModule("stdio")
-public class StdIoPlugin {
+public class StdIO {
 
     @StexLifeFunction
     public void println(DataUnit d) {
@@ -25,6 +25,12 @@ public class StdIoPlugin {
     @StexLifeFunction
     public DataUnit read() {
         return read(1);
+    }
+
+    @StexLifeFunction
+    public DataUnit read(DataUnit amount) {
+        DataType.expecting(amount, DataType.INT);
+        return read(amount.getInt().intValue());
     }
 
     public DataUnit read(int amount) {
