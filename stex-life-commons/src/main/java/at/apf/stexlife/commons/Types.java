@@ -104,4 +104,73 @@ public class Types {
     public DataUnit isNumber(DataUnit x) {
         return new DataUnit(x.getType() == DataType.INT || x.getType() == DataType.FLOAT, DataType.BOOL);
     }
+
+    @StexLifeFunction("class")
+    public DataUnit getClass(DataUnit obj) {
+        if (obj.getType() == DataType.OBJECT && obj.getObject().containsKey("_class")) {
+            DataUnit _class = obj.getObject().get("_class");
+            DataType.expecting(_class, DataType.LIMITED);
+            if (_class.getContent() instanceof TypeTree) {
+                return new DataUnit(((TypeTree)_class.getObject()).name, DataType.STRING);
+            }
+        }
+        return new DataUnit(null, DataType.NULL);
+    }
+
+    @StexLifeFunction("class")
+    public DataUnit createClass(DataUnit obj, DataUnit type) {
+        DataType.expecting(obj, DataType.OBJECT);
+        DataType.expecting(type, DataType.STRING);
+        TypeTree parent = null;
+        if (obj.getObject().containsKey("_class")) {
+            parent = (TypeTree) obj.getObject().get("_class").getContent();
+        }
+        obj.getObject().put("_class", new DataUnit(new TypeTree(type.getString(), parent), DataType.LIMITED));
+        return obj;
+    }
+
+    @StexLifeFunction
+    public DataUnit typeOf(DataUnit obj, DataUnit type) {
+        DataType.expecting(obj, DataType.OBJECT);
+        DataType.expecting(obj, new DataType[]{ DataType.STRING, DataType.LIMITED });
+        if (!obj.getObject().containsKey("_class")) {
+            return new DataUnit(false, DataType.BOOL);
+        }
+        if (type.getType() == DataType.LIMITED) {
+            TypeTree t = (TypeTree) obj.getObject().get("_class").getContent();
+            while (t != null) {
+                if (t == type.getContent()) {
+                    return new DataUnit(true, DataType.BOOL);
+                }
+                t = t.parent;
+            }
+            return new DataUnit(false, DataType.BOOL);
+        }
+        TypeTree t = (TypeTree) obj.getObject().get("_class").getContent();
+        while (t != null) {
+            if (t.name.equals(type.getString())) {
+                return new DataUnit(true, DataType.BOOL);
+            }
+            t = t.parent;
+        }
+        return new DataUnit(false, DataType.BOOL);
+    }
+
+    private class TypeTree {
+        private String name;
+        private TypeTree parent;
+
+        public TypeTree(String name, TypeTree parent) {
+            this.name = name;
+            this.parent = parent;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public TypeTree getParent() {
+            return parent;
+        }
+    }
 }
