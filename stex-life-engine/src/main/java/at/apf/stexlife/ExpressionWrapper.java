@@ -5,7 +5,7 @@ import at.apf.stexlife.api.DataUnit;
 import at.apf.stexlife.api.FunctionWrapper;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 
-public class ExpressionContainer {
+public class ExpressionWrapper {
     private StexLifeGrammarParser.ExpressionContext expression;
     private StexLifeGrammarParser.OperationContext operation;
     private StexLifeGrammarParser.OperandContext operand;
@@ -15,8 +15,9 @@ public class ExpressionContainer {
     private StexLifeGrammarParser.ObjectContext object;
     private StexLifeGrammarParser.FunctionCallContext functionCall;
     private StexLifeGrammarParser.AnonymousFunctionContext anonymousFunction;
+    private StexLifeGrammarParser.SelfFunctionRefContext selfFunctionRef;
 
-    public ExpressionContainer(StexLifeGrammarParser.ExpressionContext e) {
+    public ExpressionWrapper(StexLifeGrammarParser.ExpressionContext e) {
         expression = e.expression();
         operation = e.operation();
         operand = e.operand();
@@ -26,9 +27,10 @@ public class ExpressionContainer {
         object = e.object();
         functionCall = e.functionCall();
         anonymousFunction = e.anonymousFunction();
+        selfFunctionRef = e.selfFunctionRef();
     }
 
-    public ExpressionContainer(StexLifeGrammarParser.OperationExpressionContext e) {
+    public ExpressionWrapper(StexLifeGrammarParser.OperationExpressionContext e) {
         expression = e.expression();
         operand = e.operand();
         ternaryExpression = e.ternaryExpression();
@@ -72,5 +74,9 @@ public class ExpressionContainer {
 
     public StexLifeGrammarParser.TernaryExpressionContext ternaryExpression() {
         return ternaryExpression;
+    }
+
+    public StexLifeGrammarParser.SelfFunctionRefContext getSelfFunctionRef() {
+        return selfFunctionRef;
     }
 }

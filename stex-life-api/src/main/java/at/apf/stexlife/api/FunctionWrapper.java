@@ -31,6 +31,10 @@ public class FunctionWrapper {
         this.ctx = ctx;
     }
 
+    public boolean isAnonymous() {
+        return anonymous != null;
+    }
+
     public boolean isNamed() {
         return named != null;
     }

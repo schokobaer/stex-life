@@ -205,7 +205,8 @@ public class VMImpl implements StexLifeVM {
                     obj = obj.getObject().get(ids.get(i).getText());
                     DataType.expecting(obj, DataType.OBJECT);
                 }
-                if (value.getType() == DataType.FUNCTION) {
+                if (value.getType() == DataType.FUNCTION &&
+                        (ctx.expression().selfFunctionRef() != null || ctx.expression().anonymousFunction() != null)) {
                     value.getFunction().setCtx(obj);
                 }
                 obj.getObject().put(ids.get(ids.size() - 1).getText(), value);
@@ -223,7 +224,8 @@ public class VMImpl implements StexLifeVM {
 
             if (data.getType() == DataType.OBJECT) {
                 DataType.expecting(index, DataType.STRING);
-                if (value.getType() == DataType.FUNCTION) {
+                if (value.getType() == DataType.FUNCTION &&
+                        (ctx.expression().selfFunctionRef() != null || ctx.expression().anonymousFunction() != null)) {
                     value.getFunction().setCtx(data);
                 }
                 data.getObject().put(index.getString(), value);
@@ -404,14 +406,14 @@ public class VMImpl implements StexLifeVM {
     }
 
     private DataUnit evalExpression(StexLifeGrammarParser.ExpressionContext ctx) {
-        return evalExpression(new ExpressionContainer(ctx));
+        return evalExpression(new ExpressionWrapper(ctx));
     }
 
     private DataUnit evalOperationExpression(StexLifeGrammarParser.OperationExpressionContext ctx) {
-        return evalExpression(new ExpressionContainer(ctx));
+        return evalExpression(new ExpressionWrapper(ctx));
     }
 
-    private DataUnit evalExpression(ExpressionContainer e) {
+    private DataUnit evalExpression(ExpressionWrapper e) {
         if (e.expression() != null) {
             return evalExpression(e.expression());
         } else if (e.operand() != null) {
@@ -430,6 +432,10 @@ public class VMImpl implements StexLifeVM {
             return evalFunctionCall(e.functionCall());
         } else if (e.anonymousFunction() != null) {
             return new DataUnit(new FunctionWrapper(e.anonymousFunction()), DataType.FUNCTION);
+        } else if (e.getSelfFunctionRef() != null) {
+            DataUnit fun = evalExpression(e.getSelfFunctionRef().expression());
+            DataType.expecting(fun, DataType.FUNCTION);
+            return fun;
         }
 
         throw new RuntimeException("Unexpected operation expression");
@@ -476,7 +482,8 @@ public class VMImpl implements StexLifeVM {
                 throw new NameAlreadyDeclaredException(name);
             }
             DataUnit value = evalExpression(field.expression());
-            if (value.getType() == DataType.FUNCTION) {
+            if (value.getType() == DataType.FUNCTION &&
+                    (field.expression().anonymousFunction() != null || field.expression().selfFunctionRef() != null)) {
                 value.getFunction().setCtx(o);
             }
             obj.put(name, value);
