@@ -203,6 +203,10 @@ public class VMImpl implements StexLifeVM {
             // override the old value
             List<TerminalNode> ids = ctx.assignee().identifier().ID();
             if (ids.size() == 1) {
+                if (ctx.shortAssignOp() != null) {
+                    value = evalShortAssignOperation(ctx.shortAssignOp(),
+                            stexFrame.getDataFrame().get(ids.get(0).getText()), value);
+                }
                 stexFrame.getDataFrame().set(ids.get(0).getText(), value);
             } else {
                 DataUnit obj = stexFrame.getDataFrame().get(ids.get(0).getText());
@@ -215,6 +219,10 @@ public class VMImpl implements StexLifeVM {
                         (ctx.expression().selfFunctionRef() != null || ctx.expression().anonymousFunction() != null)) {
                     value.getFunction().setCtx(obj);
                 }
+                if (ctx.shortAssignOp() != null) {
+                    value = evalShortAssignOperation(ctx.shortAssignOp(),
+                            obj.getObject().get(ids.get(ids.size() - 1).getText()), value);
+                }
                 obj.getObject().put(ids.get(ids.size() - 1).getText(), value);
             }
         } else {
@@ -224,6 +232,10 @@ public class VMImpl implements StexLifeVM {
 
             if (data.getType() == DataType.ARRAY) {
                 DataType.expecting(index, DataType.INT);
+                if (ctx.shortAssignOp() != null) {
+                    value = evalShortAssignOperation(ctx.shortAssignOp(),
+                            data.getArray().get(index.getInt().intValue()), value);
+                }
                 data.getArray().set(index.getInt().intValue(), value);
                 return StmtResult.NONE;
             }
@@ -233,6 +245,10 @@ public class VMImpl implements StexLifeVM {
                 if (value.getType() == DataType.FUNCTION &&
                         (ctx.expression().selfFunctionRef() != null || ctx.expression().anonymousFunction() != null)) {
                     value.getFunction().setCtx(data);
+                }
+                if (ctx.shortAssignOp() != null) {
+                    value = evalShortAssignOperation(ctx.shortAssignOp(),
+                            data.getObject().get(index.getString()), value);
                 }
                 data.getObject().put(index.getString(), value);
                 return StmtResult.NONE;
@@ -432,6 +448,22 @@ public class VMImpl implements StexLifeVM {
 
     private DataUnit evalOperationExpression(StexLifeGrammarParser.OperationExpressionContext ctx) {
         return evalExpression(new ExpressionWrapper(ctx));
+    }
+
+    private DataUnit evalShortAssignOperation(StexLifeGrammarParser.ShortAssignOpContext ctx, DataUnit left, DataUnit right) {
+        if (ctx.ADD() != null) {
+            return Arithmetics.Add(left, right);
+        } else if (ctx.SUB() != null) {
+            return Arithmetics.Sub(left, right);
+        } else if (ctx.MUL() != null) {
+            return Arithmetics.Mul(left, right);
+        } else if (ctx.DIV() != null) {
+            return Arithmetics.Div(left, right);
+        } else if (ctx.MOD() != null) {
+            return Arithmetics.Mod(left, right);
+        }
+
+        throw new StexLifeException("Invalid operation: " + ctx.getText());
     }
 
     private DataUnit evalExpression(ExpressionWrapper e) {

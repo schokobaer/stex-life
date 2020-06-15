@@ -697,4 +697,46 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(0L, result.getInt().longValue());
     }
+
+    @Test
+    public void shortAssignment_shouldIncrement() {
+        String code =
+                "main() {" +
+                        "  let a = 3;" +
+                        "  a += 1;" +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(4L, result.getInt().longValue());
+    }
+
+    @Test
+    public void shortAssignmentInObject_shouldIncrement() {
+        String code =
+                "main() {" +
+                        "  let obj = {a:3};" +
+                        "  obj.a += 1;" +
+                        "  return obj.a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(4L, result.getInt().longValue());
+    }
+
+    @Test
+    public void shortAssignmentWithArray_shouldAddElement() {
+        String code =
+                "main() {" +
+                        "  let arr = [1, 2];" +
+                        "  arr[1] += 1;" +
+                        "  return arr[1];" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3, result.getInt().intValue());
+    }
 }

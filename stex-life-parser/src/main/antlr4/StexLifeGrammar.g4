@@ -39,7 +39,8 @@ foreachStm:     'foreach' '(' LET ID 'in' expression ')' block ;
 throwStmt:		'throw' expression ';' ;
 returnStmt:	    'return' (expression)? ';' ;
 
-assignStmt: 	assignee '=' expression ;
+assignStmt: 	assignee (shortAssignOp)?'=' expression ;
+shortAssignOp:		(ADD|SUB|MUL|DIV|MOD) ;
 declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
