@@ -180,6 +180,46 @@ public class VMImplStmtTest {
     }
 
     @Test
+    public void whileLoop_shouldBreakAfterRound10() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  while (true) {" +
+                        "    a = a + 1;" +
+                        "    if (a == 10) {" +
+                        "      break;" +
+                        "    }" +
+                        "  } " +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(10L, result.getInt().longValue());
+    }
+
+    @Test
+    public void whileLoopWithContinue_shouldSKipAfterRound5() {
+        String code =
+                "main() {" +
+                        "  let sum = 0;" +
+                        "  let i = 0;" +
+                        "  while (i < 10) {" +
+                        "    i = i + 1;" +
+                        "    if (i > 5) {" +
+                        "      continue;" +
+                        "    }" +
+                        "    sum = sum + i;" +
+                        "  } " +
+                        "  return sum;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(15L, result.getInt().longValue());
+    }
+
+    @Test
     public void forLoop_shouldRun10Times() {
         String code =
                 "main() {" +
@@ -193,6 +233,44 @@ public class VMImplStmtTest {
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(10L, result.getInt().longValue());
+    }
+
+    @Test
+    public void forLoopWithBreak_shouldRun5Times() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  for (let i = 0; i < 10; i = i + 1) {" +
+                        "    a = a + 1;" +
+                        "    if (a == 5) {" +
+                        "      break;" +
+                        "    }" +
+                        "  } " +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(5L, result.getInt().longValue());
+    }
+
+    @Test
+    public void forLoopWithContinue_shouldRun5Times() {
+        String code =
+                "main() {" +
+                        "  let a = 0;" +
+                        "  for (let i = 0; i < 10; i = i + 1) {" +
+                        "    if (i == 5) {" +
+                        "      continue;" +
+                        "    }" +
+                        "    a = a + 1;" +
+                        "  } " +
+                        "  return a;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(9L, result.getInt().longValue());
     }
 
     @Test(expected = NameNotFoundException.class)
@@ -228,6 +306,46 @@ public class VMImplStmtTest {
         DataUnit result = vm.run("main");
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(6L, result.getInt().longValue());
+    }
+
+    @Test
+    public void foreachLoopWithArray_shouldBreakAt2() {
+        String code =
+                "main() {" +
+                        "  let a = [1, 2, 3];" +
+                        "  let sum = 0;" +
+                        "  foreach (let x in a) {" +
+                        "    sum = sum + x;" +
+                        "    if (x == 2) {" +
+                        "      break;" +
+                        "    }" +
+                        "  } " +
+                        "  return sum;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(3L, result.getInt().longValue());
+    }
+
+    @Test
+    public void foreachLoopWithArray_shouldContinueAt2() {
+        String code =
+                "main() {" +
+                        "  let a = [1, 2, 3];" +
+                        "  let sum = 0;" +
+                        "  foreach (let x in a) {" +
+                        "    if (x == 2) {" +
+                        "      continue;" +
+                        "    }" +
+                        "    sum = sum + x;" +
+                        "  } " +
+                        "  return sum;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(4L, result.getInt().longValue());
     }
 
     @Test

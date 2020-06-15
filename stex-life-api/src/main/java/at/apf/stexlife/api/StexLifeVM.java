@@ -14,9 +14,9 @@ public interface StexLifeVM {
 
     /**
      * TODOS:
-     *  - Add quickAssignments (x++, x--, x+=, ++x)
+     *  - Add shortAssignments (a += 1, b *= 3)
      *  - Introduce LIMITED type
-     *  - import a whole module (access with module.function)
+     *  - Introduce break and continue for loops
      *  - other source files and export
      *  - concatExpression support (zB person().name)
      *  - EL (expression language ${}} in strings

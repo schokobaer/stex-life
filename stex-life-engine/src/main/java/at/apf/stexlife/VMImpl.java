@@ -11,7 +11,9 @@ import at.apf.stexlife.exception.UncaughtExceptionException;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 import at.apf.stexlife.runtime.Arithmetics;
 import at.apf.stexlife.runtime.DataFrame;
+import at.apf.stexlife.runtime.ExpressionWrapper;
 import at.apf.stexlife.runtime.StexFrame;
+import at.apf.stexlife.runtime.StmtResult;
 import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -153,7 +155,7 @@ public class VMImpl implements StexLifeVM {
         return stexFrame.getResult();
     }
 
-    private boolean runStmt(StexLifeGrammarParser.StmtContext stmt) {
+    private StmtResult runStmt(StexLifeGrammarParser.StmtContext stmt) {
         if (stmt.declareStmt() != null) {
             return runDeclareStmt(stmt.declareStmt());
         } else if (stmt.assignStmt() != null) {
@@ -170,28 +172,32 @@ public class VMImpl implements StexLifeVM {
             return runForeachStmt(stmt.foreachStm());
         } else if (stmt.voidFunctionCall() != null) {
             evalFunctionCall(stmt.voidFunctionCall().functionCall());
-            return true;
+            return StmtResult.NONE;
         } else if (stmt.tryStmt() != null) {
             return runTryStmt(stmt.tryStmt());
         } else if (stmt.throwStmt() != null) {
             runThrowStmt(stmt.throwStmt());
         } else if (stmt.returnStmt() != null) {
             return runReturnStmt(stmt.returnStmt());
+        } else if (stmt.BREAK() != null) {
+            return StmtResult.BREAK;
+        } else if (stmt.CONTINUE() != null) {
+            return StmtResult.CONTINUE;
         }
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runDeclareStmt(StexLifeGrammarParser.DeclareStmtContext ctx) {
+    private StmtResult runDeclareStmt(StexLifeGrammarParser.DeclareStmtContext ctx) {
         String name = ctx.ID().getText();
         if (stexFrame.getDataFrame().contains(name)) {
             throw new NameAlreadyDeclaredException(name);
         }
         DataUnit value = evalExpression(ctx.expression());
         stexFrame.getDataFrame().set(name, value);
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runAssignStmt(StexLifeGrammarParser.AssignStmtContext ctx) {
+    private StmtResult runAssignStmt(StexLifeGrammarParser.AssignStmtContext ctx) {
         DataUnit value = evalExpression(ctx.expression());
         if (ctx.assignee().identifier() != null) {
             // override the old value
@@ -219,7 +225,7 @@ public class VMImpl implements StexLifeVM {
             if (data.getType() == DataType.ARRAY) {
                 DataType.expecting(index, DataType.INT);
                 data.getArray().set(index.getInt().intValue(), value);
-                return true;
+                return StmtResult.NONE;
             }
 
             if (data.getType() == DataType.OBJECT) {
@@ -229,35 +235,37 @@ public class VMImpl implements StexLifeVM {
                     value.getFunction().setCtx(data);
                 }
                 data.getObject().put(index.getString(), value);
-                return true;
+                return StmtResult.NONE;
             }
 
             DataType.expecting(data, DataType.ARRAY, DataType.OBJECT);
         }
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runBlock(StexLifeGrammarParser.BlockContext ctx) {
+    private StmtResult runBlock(StexLifeGrammarParser.BlockContext ctx) {
         stexFrame.enterDataFrame();
         for (StexLifeGrammarParser.StmtContext stmt: ctx.stmt()) {
-            if (!runStmt(stmt)) {
+            StmtResult res = runStmt(stmt);
+            if (res != StmtResult.NONE){
                 stexFrame.leafeDataFrame();
-                return false;
+                return res;
             }
         }
         stexFrame.leafeDataFrame();
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runIfStmt(StexLifeGrammarParser.IfStmtContext ctx) {
+    private StmtResult runIfStmt(StexLifeGrammarParser.IfStmtContext ctx) {
         DataUnit decision = evalExpression(ctx.expression());
         if (decision.getType() != DataType.BOOL) {
             throw new InvalidTypeException(decision.getType(), DataType.BOOL);
         }
         if (decision.getBool()) {
             // run stmt
-            if (!runBlock(ctx.block())) {
-                return false;
+            StmtResult stmtResult =runBlock(ctx.block());
+            if (stmtResult != StmtResult.NONE) {
+                return stmtResult;
             }
         } else {
             boolean valid = false;
@@ -268,23 +276,25 @@ public class VMImpl implements StexLifeVM {
                 }
                 if (decision.getBool()) {
                     valid = true;
-                    if (!runBlock(elif.block())) {
-                        return false;
+                    StmtResult stmtResult = runBlock(elif.block());
+                    if (stmtResult != StmtResult.NONE) {
+                        return stmtResult;
                     }
                     break;
                 }
             }
             if (!valid && ctx.elseBlock() != null) {
                 // run elseBlock.stmt
-                if (!runBlock(ctx.elseBlock().block())) {
-                    return false;
+                StmtResult stmtResult = runBlock(ctx.elseBlock().block());
+                if (stmtResult != StmtResult.NONE) {
+                    return stmtResult;
                 }
             }
         }
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runWhileStmt(StexLifeGrammarParser.WhileStmtContext ctx) {
+    private StmtResult runWhileStmt(StexLifeGrammarParser.WhileStmtContext ctx) {
         while (true) {
             DataUnit decision = evalExpression(ctx.expression());
             if (decision.getType() != DataType.BOOL) {
@@ -293,14 +303,17 @@ public class VMImpl implements StexLifeVM {
             if (!decision.getBool()) {
                 break;
             }
-            if (!runBlock(ctx.block())) {
-                return false;
+            StmtResult result = runBlock(ctx.block());
+            if (result == StmtResult.RETURN) {
+                return result;
+            } else if (result == StmtResult.BREAK) {
+                break;
             }
         }
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runForStmt(StexLifeGrammarParser.ForStmtContext ctx) {
+    private StmtResult runForStmt(StexLifeGrammarParser.ForStmtContext ctx) {
         stexFrame.enterDataFrame();
         // Declare loop variable
         String name = ctx.ID().getText();
@@ -321,19 +334,22 @@ public class VMImpl implements StexLifeVM {
             }
 
             // stmt
-            if (!runBlock(ctx.block())) {
+            StmtResult result = runBlock(ctx.block());
+            if (result == StmtResult.RETURN) {
                 stexFrame.leafeDataFrame();
-                return false;
+                return result;
+            } else if (result == StmtResult.BREAK) {
+                break;
             }
 
             // assign
             runAssignStmt(ctx.assignStmt());
         }
         stexFrame.leafeDataFrame();
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runForeachStmt(StexLifeGrammarParser.ForeachStmContext ctx) {
+    private StmtResult runForeachStmt(StexLifeGrammarParser.ForeachStmContext ctx) {
         DataUnit collection = evalExpression(ctx.expression());
         if (collection.getType() != DataType.ARRAY && collection.getType() != DataType.STRING && collection.getType() != DataType.OBJECT) {
             throw new InvalidTypeException(collection.getType(), DataType.ARRAY);
@@ -355,19 +371,22 @@ public class VMImpl implements StexLifeVM {
             stexFrame.getDataFrame().set(name, elem);
 
             // stmt
-            if (!runBlock(ctx.block())) {
-                stexFrame.leafeDataFrame();
-                return false;
-            }
+            StmtResult result = runBlock(ctx.block());
             stexFrame.leafeDataFrame();
+
+            if (result == StmtResult.RETURN) {
+                return result;
+            } else if (result == StmtResult.BREAK) {
+                break;
+            }
         }
-        return true;
+        return StmtResult.NONE;
     }
 
-    private boolean runTryStmt(StexLifeGrammarParser.TryStmtContext ctx) {
+    private StmtResult runTryStmt(StexLifeGrammarParser.TryStmtContext ctx) {
         StexFrame stack = stexFrame;
         DataFrame dataFrame = stexFrame.getDataFrame();
-        boolean result;
+        StmtResult result;
         try {
             result = runBlock(ctx.block());
         } catch (StexLifeException e) {
@@ -381,8 +400,10 @@ public class VMImpl implements StexLifeVM {
             stexFrame.leafeDataFrame();
         }
         if (ctx.finallyBlock() != null) {
-            boolean finallyResult = runBlock(ctx.finallyBlock().block());
-            result = result && finallyResult;
+            StmtResult finallyResult = runBlock(ctx.finallyBlock().block());
+            if (finallyResult != StmtResult.NONE) {
+                result = finallyResult;
+            }
         }
         return result;
     }
@@ -398,11 +419,11 @@ public class VMImpl implements StexLifeVM {
         throw new StexLifeException(e.getObject());
     }
 
-    private boolean runReturnStmt(StexLifeGrammarParser.ReturnStmtContext ctx) {
+    private StmtResult runReturnStmt(StexLifeGrammarParser.ReturnStmtContext ctx) {
         if (ctx.expression() != null) {
             stexFrame.setResult(evalExpression(ctx.expression()));
         }
-        return false;
+        return StmtResult.RETURN;
     }
 
     private DataUnit evalExpression(StexLifeGrammarParser.ExpressionContext ctx) {

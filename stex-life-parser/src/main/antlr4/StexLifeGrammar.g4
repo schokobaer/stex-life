@@ -19,7 +19,7 @@ function:       (EXPORT)? ID '(' paramList ')' block ;
 paramList:      (ID (',' ID)*)? ;
 
 stmt:           (block|ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
-					 |assignStmt ';'|declareStmt|voidFunctionCall);
+					 |assignStmt ';'|declareStmt|voidFunctionCall|BREAK ';'|CONTINUE ';');
 
 block:          '{' stmt* '}' ;
 
@@ -93,6 +93,8 @@ SELF        : 'this' ;
 EXPORT      : 'export' ;
 FROM        : 'from' ;
 IMPORT      : 'import' ;
+BREAK       : 'break' ;
+CONTINUE    : 'continue' ;
 
 ADD : '+' ;
 SUB : '-' ;
