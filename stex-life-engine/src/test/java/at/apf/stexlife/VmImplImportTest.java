@@ -6,12 +6,14 @@ import at.apf.stexlife.plugin.HugoPlugin;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+
 public class VmImplImportTest {
 
     private VMImpl vm;
 
     @Test
-    public void importFullModule_shouldWork() {
+    public void importFullModule_shouldWork() throws IOException {
         String code =
                 "import hugo;" +
                         "main() {" +
@@ -29,7 +31,7 @@ public class VmImplImportTest {
     }
 
     @Test
-    public void importFullModuleWithAlias_shouldWork() {
+    public void importFullModuleWithAlias_shouldWork() throws IOException {
         String code =
                 "import hugo as h;" +
                 "main() {" +

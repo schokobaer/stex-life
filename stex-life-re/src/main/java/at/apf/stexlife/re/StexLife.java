@@ -47,6 +47,10 @@ public class StexLife {
             System.err.println(e.getCause().getMessage());
             System.exit(1);
             return;
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+            return;
         }
     }
 }

@@ -6,6 +6,8 @@ import at.apf.stexlife.plugin.StdIO;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+
 public class FibonacciTest {
 
     //@Test // TODO: Fix me
@@ -34,7 +36,7 @@ public class FibonacciTest {
     }
 
     //@Test
-    public void runLoopWithStdIo() {
+    public void runLoopWithStdIo() throws IOException {
         String code =
                 "from stdio import println;" +
                 "main() {\n" +

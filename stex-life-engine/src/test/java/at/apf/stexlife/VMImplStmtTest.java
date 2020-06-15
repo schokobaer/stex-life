@@ -9,6 +9,8 @@ import at.apf.stexlife.runtime.exception.NameNotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+
 public class VMImplStmtTest {
 
     private VMImpl vm;
@@ -578,7 +580,7 @@ public class VMImplStmtTest {
     }
 
     @Test
-    public void pluginVoidFunctionCall_shouldClearArray() {
+    public void pluginVoidFunctionCall_shouldClearArray() throws IOException {
         String code =
                 "from hugo import clear;" +
                         "main() {" +
@@ -596,7 +598,7 @@ public class VMImplStmtTest {
     }
 
     @Test
-    public void pluginFunctionCallWithFunctionArgument_shouldRunInVM() {
+    public void pluginFunctionCallWithFunctionArgument_shouldRunInVM() throws IOException {
         String code =
                 "from hugo import sort;" +
                         "main() {" +
@@ -617,7 +619,7 @@ public class VMImplStmtTest {
     }
 
     @Test
-    public void pluginFunctionCall_shouldReturnNewArray() {
+    public void pluginFunctionCall_shouldReturnNewArray() throws IOException {
         String code =
                 "from hugo import flip;" +
                         "main() {" +
@@ -637,7 +639,7 @@ public class VMImplStmtTest {
     }
 
     @Test
-    public void throwInPluginFunctionCall_shouldGetHandled() {
+    public void throwInPluginFunctionCall_shouldGetHandled() throws IOException {
         String code =
                 "from hugo import flip;" +
                 "main() {" +
@@ -657,7 +659,7 @@ public class VMImplStmtTest {
     }
 
     @Test
-    public void aliasedPluginVoidFunctionCall_shouldClearArray() {
+    public void aliasedPluginVoidFunctionCall_shouldClearArray() throws IOException {
         String code =
                 "from hugo import clear as trash;" +
                         "main() {" +
