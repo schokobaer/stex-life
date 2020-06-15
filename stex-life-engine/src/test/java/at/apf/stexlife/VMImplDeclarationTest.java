@@ -17,13 +17,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = 1;" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.INT, df.get("a").getType());
-        Assert.assertEquals(1, df.get("a").getInt().intValue());
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1, result.getInt().intValue());
     }
 
     @Test
@@ -31,13 +30,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = -1;" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.INT, df.get("a").getType());
-        Assert.assertEquals(-1, df.get("a").getInt().intValue());
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(-1, result.getInt().intValue());
     }
 
     @Test
@@ -45,13 +43,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = 1.2;" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.FLOAT, df.get("a").getType());
-        Assert.assertEquals(1.2, df.get("a").getFloat().floatValue(), 0.000001);
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.FLOAT, result.getType());
+        Assert.assertEquals(1.2, result.getFloat().floatValue(), 0.000001);
     }
 
     @Test
@@ -59,13 +56,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = -1.2;" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.FLOAT, df.get("a").getType());
-        Assert.assertEquals(-1.2, df.get("a").getFloat().floatValue(), 0.000001);
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.FLOAT, result.getType());
+        Assert.assertEquals(-1.2, result.getFloat().floatValue(), 0.000001);
     }
 
     @Test
@@ -73,13 +69,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = true;" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.BOOL, df.get("a").getType());
-        Assert.assertTrue(df.get("a").getBool());
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.BOOL, result.getType());
+        Assert.assertTrue(result.getBool());
     }
 
     @Test
@@ -87,13 +82,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = null;" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.NULL, df.get("a").getType());
-        Assert.assertNull(df.get("a").getContent());
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.NULL, result.getType());
+        Assert.assertNull(result.getContent());
     }
 
     @Test
@@ -101,13 +95,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = \"foo\";" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.STRING, df.get("a").getType());
-        Assert.assertEquals("foo", df.get("a").getString());
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("foo", result.getString());
     }
 
     @Test
@@ -115,13 +108,12 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = [1, \"bla\", true, null];" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.ARRAY, df.get("a").getType());
-        Assert.assertEquals(4, df.get("a").getArray().size());
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.ARRAY, result.getType());
+        Assert.assertEquals(4, result.getArray().size());
     }
 
     @Test
@@ -129,14 +121,13 @@ public class VMImplDeclarationTest {
         String code =
                 "main() {" +
                         "  let a = {id: 1, name: \"foo\"};" +
+                        "  return a;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        vm.run("main");
-        DataFrame df = vm.getStexFrame().getDataFrame();
-        Assert.assertTrue(df.contains("a"));
-        Assert.assertEquals(DataType.OBJECT, df.get("a").getType());
-        Assert.assertEquals(2, df.get("a").getObject().size());
-        Map<String, DataUnit> obj = df.get("a").getObject();
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.OBJECT, result.getType());
+        Assert.assertEquals(2, result.getObject().size());
+        Map<String, DataUnit> obj = result.getObject();
         Assert.assertTrue(obj.containsKey("id"));
         Assert.assertTrue(obj.containsKey("name"));
         Assert.assertEquals(DataType.INT, obj.get("id").getType());

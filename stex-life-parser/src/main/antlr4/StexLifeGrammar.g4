@@ -15,7 +15,7 @@ includeDeclaration: ID (alias)? ;
 alias:          'as' ID ;
 includeSource:  (ID|STRING) ;
 
-function:       (EXPORT)? ID '(' paramList ')' '{' stmt* '}' ;
+function:       (EXPORT)? ID '(' paramList ')' block ;
 paramList:      (ID (',' ID)*)? ;
 
 stmt:           (block|ifStmt|tryStmt|whileStmt|forStmt|foreachStm|throwStmt|returnStmt
@@ -58,7 +58,7 @@ objectField:		ID (':' expression)? ;
 
 array:				'[' (expression (',' expression)*)? ']' ;
 
-anonymousFunction:  '(' paramList ')' '{' stmt* '}' ;
+anonymousFunction:  '(' paramList ')' block ;
 
 functionCall:		identifier '(' argList ')' ;
 argList:            (expression (',' expression)*)? ;

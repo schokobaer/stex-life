@@ -45,7 +45,7 @@ public class FunctionWrapper {
                 anonymous != null ? anonymous.paramList() : null;
     }
 
-    public List<StexLifeGrammarParser.StmtContext> getStmt() {
-        return function != null ? function.stmt() : anonymous.stmt();
+    public StexLifeGrammarParser.BlockContext getBlock() {
+        return function != null ? function.block() : anonymous.block();
     }
 }

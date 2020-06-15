@@ -32,10 +32,6 @@ public class VMImpl implements StexLifeVM {
     private PluginRegistry pluginRegistry;
     private Map<String, Pair<String, String>> includes = new HashMap<>(); // <alias, <module, function>>
 
-    StexFrame getStexFrame() {
-        return stexFrame;
-    }
-
     public VMImpl(StexLifeGrammarParser.ProgramContext program) {
         this.program = program;
         this.pluginRegistry = new PluginRegistryImpl();
@@ -153,11 +149,7 @@ public class VMImpl implements StexLifeVM {
     }
 
     private DataUnit runFunction(FunctionWrapper f) {
-        for (StexLifeGrammarParser.StmtContext stmt: f.getStmt()) {
-            if (!runStmt(stmt)) {
-                return stexFrame.getResult();
-            }
-        }
+        runBlock(f.getBlock());
         return stexFrame.getResult();
     }
 
