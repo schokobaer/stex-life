@@ -44,9 +44,8 @@ declareStmt:		(LET|CONST) ID ('=' expression)? ';' ;
 
 voidFunctionCall:		functionCall ';' ;
 
-expression:      ('(' expression ')'|operation|operand|dynamicAccess|array|object|functionCall|anonymousFunction) ;
-operationExpression:	('(' expression ')'|operand|dynamicAccess|array|object|functionCall) ;
-//concatExpression: (functionCall|array|dynamicAccess|object) '.' expression;
+expression:      ('(' expression ')'|operation|operand|ternaryExpression|dynamicAccess|array|object|functionCall|anonymousFunction) ;
+operationExpression:	('(' expression ')'|operand|ternaryExpression|dynamicAccess|array|object|functionCall) ;
 
 operand:		(identifier|value);
 identifier:		(ID|SELF) ('.' ID)* ;
@@ -67,6 +66,8 @@ operation:		    operationExpression operationType expression
 					| notOperation ;
 notOperation:		'not' expression ;
 operationType:		(ADD|SUB|MUL|DIV|MOD|EQU|NEQ|GRT|GRE|SMT|SME|IN|AND|OR) ;
+
+ternaryExpression:  'if' expression '?' expression ':' expression ;
 
 assignee:			identifier | dynamicAccess ;
 

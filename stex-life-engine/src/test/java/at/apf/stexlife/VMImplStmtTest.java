@@ -555,4 +555,28 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.ARRAY, result.getType());
         Assert.assertEquals(0, result.getArray().size());
     }
+
+    @Test
+    public void ternaryExpression_shouldReturnFirstExpression() {
+        String code =
+                "main() {" +
+                        "  return if 3 > 2 ? 1 : 0;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(1L, result.getInt().longValue());
+    }
+
+    @Test
+    public void ternaryExpression_shouldReturnSecondExpression() {
+        String code =
+                "main() {" +
+                        "  return if 1 > 2 ? 1 : 0;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.INT, result.getType());
+        Assert.assertEquals(0L, result.getInt().longValue());
+    }
 }

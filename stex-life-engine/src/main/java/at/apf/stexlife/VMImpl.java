@@ -403,7 +403,15 @@ public class VMImpl implements StexLifeVM {
         return false;
     }
 
-    private DataUnit evalExpression(StexLifeGrammarParser.ExpressionContext e) {
+    private DataUnit evalExpression(StexLifeGrammarParser.ExpressionContext ctx) {
+        return evalExpression(new ExpressionContainer(ctx));
+    }
+
+    private DataUnit evalOperationExpression(StexLifeGrammarParser.OperationExpressionContext ctx) {
+        return evalExpression(new ExpressionContainer(ctx));
+    }
+
+    private DataUnit evalExpression(ExpressionContainer e) {
         if (e.expression() != null) {
             return evalExpression(e.expression());
         } else if (e.operand() != null) {
@@ -416,26 +424,12 @@ public class VMImpl implements StexLifeVM {
             return evalDynamicAccess(e.dynamicAccess());
         } else if (e.operation() != null) {
             return evalOperation(e.operation());
+        } else if (e.ternaryExpression() != null) {
+            return evalTernaryExpression(e.ternaryExpression());
         } else if (e.functionCall() != null) {
             return evalFunctionCall(e.functionCall());
         } else if (e.anonymousFunction() != null) {
             return new DataUnit(new FunctionWrapper(e.anonymousFunction()), DataType.FUNCTION);
-        }
-
-        throw new RuntimeException("Unexpected operation expression");
-    }
-
-    private DataUnit evalOperationExpression(StexLifeGrammarParser.OperationExpressionContext e) {
-        if (e.expression() != null) {
-            return evalExpression(e.expression());
-        } else if (e.operand() != null) {
-            return evalOperand(e.operand());
-        } else if (e.array() != null) {
-            return evalArray(e.array());
-        } else if (e.object() != null) {
-            return evalObject(e.object());
-        } else if (e.dynamicAccess() != null) {
-            return evalDynamicAccess(e.dynamicAccess());
         }
 
         throw new RuntimeException("Unexpected operation expression");
@@ -572,6 +566,12 @@ public class VMImpl implements StexLifeVM {
         }
 
         throw new RuntimeException("Unexpected operator");
+    }
+
+    private DataUnit evalTernaryExpression(StexLifeGrammarParser.TernaryExpressionContext ctx) {
+        DataUnit decision = evalExpression(ctx.expression(0));
+        DataType.expecting(decision, DataType.BOOL);
+        return evalExpression(ctx.expression(decision.getBool().booleanValue() ? 1 : 2));
     }
 
     private DataUnit evalFunctionCall(StexLifeGrammarParser.FunctionCallContext ctx) {
