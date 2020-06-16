@@ -10,6 +10,7 @@ import at.apf.stexlife.exception.UncaughtExceptionException;
 import at.apf.stexlife.parser.StexLifeCodeParser;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -35,7 +36,7 @@ public class StexLife {
             return;
         }
         StexLifeGrammarParser.ProgramContext program = parser.parse(code);
-        StexLifeVM vm = new VMImpl(program, pluginRegistry);
+        StexLifeVM vm = new VMImpl(program, new File(sourceFile), pluginRegistry);
         try {
             List<DataUnit> programArgs = new ArrayList<>();
             for (int i = 1; i < args.length; i++) {

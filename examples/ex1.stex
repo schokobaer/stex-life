@@ -1,0 +1,7 @@
+from "./persons.stex" import person;
+from stdio import println;
+
+main() {
+    let a = person("ex1");
+    println("Hallo, " + a.name);
+}

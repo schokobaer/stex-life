@@ -1,0 +1,12 @@
+module persons;
+
+main() {
+    let p = person("hugo");
+    return p.name;
+}
+
+export person(name) {
+    return {
+        name: name
+    };
+}

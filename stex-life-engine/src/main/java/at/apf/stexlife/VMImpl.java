@@ -25,6 +25,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,11 +43,19 @@ public class VMImpl implements StexLifeVM {
     private static StexLifeCodeParser parser = new StexLifeCodeParser();
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program) {
-        this(program, new PluginRegistryImpl());
+        this(program, new File(System.getProperty("user.dir")));
     }
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program, PluginRegistry pluginRegistry) {
-        mainModule = new ModuleWrapper(program);
+        this(program, new File(System.getProperty("user.dir")), pluginRegistry);
+    }
+
+    public VMImpl(StexLifeGrammarParser.ProgramContext program, File fileLocation) {
+        this(program, fileLocation, new PluginRegistryImpl());
+    }
+
+    public VMImpl(StexLifeGrammarParser.ProgramContext program, File fileLocation, PluginRegistry pluginRegistry) {
+        mainModule = new ModuleWrapper(program, Paths.get(fileLocation.toURI()));
         this.pluginRegistry = pluginRegistry;
     }
 
@@ -97,24 +107,6 @@ public class VMImpl implements StexLifeVM {
 
     @Override
     public void loadIncludes() throws IOException {
-        /*mainModule.getProgram().include().forEach(i -> {
-            if (i.FROM() != null) {
-                i.includeDeclaration().forEach(dec -> {
-                    String usedName = dec.alias() != null ? dec.alias().ID().getText() : dec.ID().getText();
-                    if (mainModule.getIncludes().containsKey(usedName)) {
-                        throw new NameAlreadyDeclaredException(usedName);
-                    }
-                    mainModule.getIncludes().put(usedName, new ImmutablePair<>(i.includeSource().ID().getText(), dec.ID().getText()));
-                });
-            } else {
-                // register all functions from module
-                String module = i.includeSource().ID().getText();
-                String alias = i.alias() != null ? i.alias().ID().getText() : module;
-                pluginRegistry.getRegistrations(module).stream().forEach(fun -> {
-                    mainModule.getIncludes().put(alias + "." + fun, new ImmutablePair<>(module, fun));
-                });
-            }
-        });*/
         loadModuleIncludes(mainModule);
     }
 
@@ -126,7 +118,7 @@ public class VMImpl implements StexLifeVM {
      */
     private ModuleWrapper loadModule(File file) throws IOException {
         StexLifeGrammarParser.ProgramContext program = parser.parse(file);
-        ModuleWrapper module = new ModuleWrapper(program);
+        ModuleWrapper module = new ModuleWrapper(program, Paths.get(file.toURI()));
         if (modules.containsKey(module.getName())) {
             return modules.get(module.getName());
         }
@@ -153,10 +145,9 @@ public class VMImpl implements StexLifeVM {
                     moduleName = i.includeSource().ID().getText();
                 } else {
                     // module
-                    // TODO: Handle file path correctly (relative to current file location)
                     String filePath = i.includeSource().STRING().getText();
                     filePath = filePath.substring(1, filePath.length() - 1);
-                    ModuleWrapper subModule = loadModule(new File(filePath));
+                    ModuleWrapper subModule = loadModule(module.getLocation().getParent().resolve(filePath).normalize().toFile());
                     moduleName = subModule.getName();
                 }
                 i.includeDeclaration().forEach(dec -> {
