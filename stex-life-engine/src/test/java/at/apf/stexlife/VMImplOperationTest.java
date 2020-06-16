@@ -2,6 +2,7 @@ package at.apf.stexlife;
 
 import at.apf.stexlife.api.DataType;
 import at.apf.stexlife.api.DataUnit;
+import at.apf.stexlife.api.exception.InvalidTypeException;
 import at.apf.stexlife.exception.UncaughtExceptionException;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.exception.NameNotFoundException;
@@ -310,7 +311,7 @@ public class VMImplOperationTest {
         Assert.assertEquals(3L, result.getInt().longValue());
     }
 
-    @Test(expected = NameNotFoundException.class)
+    @Test(expected = InvalidTypeException.class)
     public void unknownFunctionCall_shouldThrowNameException() throws Throwable {
         String code =
                 "main() {" +

@@ -67,7 +67,7 @@ public class VmImplObjectContextTest {
         Assert.assertEquals("foo", result.getString());
     }
 
-    @Test(expected = NameNotFoundException.class)
+    @Test
     public void thisInNonSelfFunctionRef_shouldThrowNameException() {
         String code =
                 "main() {" +
@@ -78,11 +78,8 @@ public class VmImplObjectContextTest {
                         "  return this.id;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        try {
-            DataUnit result = vm.run("main");
-        } catch (UncaughtExceptionException e) {
-            throw (RuntimeException) e.getCause();
-        }
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(result.getType(), DataType.UNDEFINED);
     }
 
     @Test

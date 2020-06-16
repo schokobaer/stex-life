@@ -275,8 +275,8 @@ public class VMImplStmtTest {
         Assert.assertEquals(9L, result.getInt().longValue());
     }
 
-    @Test(expected = NameNotFoundException.class)
-    public void loopVariableUsageAfterForLoop_shouldThrowNameException() throws Throwable {
+    @Test
+    public void loopVariableUsageAfterForLoop_shouldReturnUndefined() throws Throwable {
         String code =
                 "main() {" +
                         "  let a = 0;" +
@@ -286,11 +286,8 @@ public class VMImplStmtTest {
                         "  return i;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        try {
-            vm.run("main");
-        } catch (UncaughtExceptionException e) {
-            throw e.getCause();
-        }
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(result.getType(), DataType.UNDEFINED);
     }
 
     @Test
@@ -401,8 +398,8 @@ public class VMImplStmtTest {
         Assert.assertEquals(3L, result.getInt().longValue());
     }
 
-    @Test(expected = NameNotFoundException.class)
-    public void blockVariableAfterBlockCall_shouldThrowNameException() throws Throwable {
+    @Test
+    public void blockVariableAfterBlockCall_shouldReturnUndefined() throws Throwable {
         String code =
                 "main() {" +
                         "  let a = 1;" +
@@ -413,11 +410,8 @@ public class VMImplStmtTest {
                         "  return b;" +
                         "}";
         vm = new VMImpl(StexCodeParser.parse(code));
-        try {
-            DataUnit result = vm.run("main");
-        } catch (UncaughtExceptionException e) {
-            throw e.getCause();
-        }
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(result.getType(), DataType.UNDEFINED);
     }
 
     @Test

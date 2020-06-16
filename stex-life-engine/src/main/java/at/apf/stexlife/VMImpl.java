@@ -60,14 +60,8 @@ public class VMImpl implements StexLifeVM {
                 .filter(f -> f.ID().getText().equals(function))
                 .findFirst();
         if (fun.isPresent()) {
-            DataFrame df = new DataFrame(null);
-            stexFrame = new StexFrame(null, df);
-            for (int i = 0; i < fun.get().paramList().ID().size(); i++) {
-                df.set(fun.get().paramList().ID(i).getText(),
-                        i < data.length ? data[i] : DataUnit.UNDEFINED);
-            }
             try {
-                return runFunction(new FunctionWrapper(fun.get(), mainModule));
+                return run(new FunctionWrapper(fun.get(), mainModule), data);
             } catch (StexLifeException e) {
                 throw new UncaughtExceptionException(e);
             }
@@ -78,8 +72,6 @@ public class VMImpl implements StexLifeVM {
 
     @Override
     public DataUnit run(FunctionWrapper function, DataUnit[] args) {
-        ModuleWrapper callModule = function.getModule();
-
         if (function.isPluginFunction()) {
             Pair<String, String> plugin = function.getPlugin();
             if (pluginRegistry.isRegistered(plugin.getLeft(), plugin.getRight())) {
@@ -95,7 +87,8 @@ public class VMImpl implements StexLifeVM {
         }
 
         stexFrame = new StexFrame(stexFrame, df);
-        stexFrame.setModule(callModule);
+        stexFrame.setModule(function.getModule());
+        stexFrame.setSelf(function.getCtx());
         DataUnit result = runFunction(function);
         stexFrame = stexFrame.getParent();
 
