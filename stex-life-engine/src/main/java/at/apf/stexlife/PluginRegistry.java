@@ -18,10 +18,9 @@ public interface PluginRegistry {
     /**
      * Checks if the given function name with the given parameter list length is registered.
      * @param function Name of the function.
-     * @param paramLength Length of the parameter list.
      * @return true if registered, otherwise false.
      */
-    boolean isRegistered(String module, String function, int paramLength);
+    boolean isRegistered(String module, String function);
 
     /**
      * Returns all functions of a registered module.

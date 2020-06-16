@@ -52,7 +52,7 @@ operationExpression:	('(' expression ')'|operand|ternaryExpression|dynamicAccess
 
 operand:		(identifier|value);
 identifier:		(ID|SELF) ('.' ID)* ;
-value:			(INT|FLOAT|BOOLEAN|NULL|STRING) ;
+value:			(INT|FLOAT|BOOLEAN|NULL|STRING|UNDEFINED) ;
 dynamicAccess:	identifier '[' expression ']' ;
 
 object:				'{' (objectField (',' objectField)*)? '}';
@@ -88,6 +88,7 @@ INT         :   ('-')?([0-9])+ ;
 FLOAT		:	('-')?([0-9])+ ('.' ([0-9])+ )? ;
 BOOLEAN		:	('true' | 'false') ;
 NULL		:	'null' ;
+UNDEFINED   :   'undefined' ;
 STRING		:	'"' (. | '\"')*? '"' ;
 
 LET         : 'let' ;

@@ -51,8 +51,14 @@ public class PluginRegistryImpl implements PluginRegistry {
     }
 
     @Override
-    public boolean isRegistered(String module, String function, int paramLength) {
-        return findMethod(module, function, paramLength) != null;
+    public boolean isRegistered(String module, String function) {
+        if (!registry.containsKey(module)) {
+            return false;
+        }
+        return Stream.of(registry.get(module).getClass().getDeclaredMethods())
+                .anyMatch(m -> m.isAnnotationPresent(StexLifeFunction.class)
+                        && (m.getAnnotation(StexLifeFunction.class).value().equals(function) ||
+                        (m.getAnnotation(StexLifeFunction.class).value().isEmpty() &&  m.getName().equals(function))));
     }
 
     @Override

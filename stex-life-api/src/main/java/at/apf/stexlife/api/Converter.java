@@ -8,7 +8,9 @@ public class Converter {
         if (ctx.BOOLEAN() != null) {
             return new DataUnit(ctx.BOOLEAN().getText().equals("true"), DataType.BOOL);
         } else if (ctx.NULL() != null) {
-            return new DataUnit(null, DataType.NULL);
+            return DataUnit.NULL;
+        } else if (ctx.UNDEFINED() != null) {
+            return DataUnit.UNDEFINED;
         } else if (ctx.INT() != null) {
             return new DataUnit(Long.parseLong(ctx.INT().getText()), DataType.INT);
         } else if (ctx.FLOAT() != null) {
@@ -28,7 +30,11 @@ public class Converter {
                     .reduce((acc, str) -> acc + ", " + str) + "}";
         } else if (data.getType() == DataType.FUNCTION) {
             return data.getFunction().getName() + "{" + data.getFunction().getParamList().ID().size() + "}";
+        } else if (data.getType() == DataType.UNDEFINED) {
+            return "undefined";
+        } else if (data.getType() == DataType.NULL) {
+            return "null";
         }
-        return data.getContent() != null ? data.getContent().toString() : "null";
+        return data.getContent().toString();
     }
 }

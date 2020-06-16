@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 public enum DataType {
 
+    UNDEFINED,
     NULL,
     INT,
     FLOAT,

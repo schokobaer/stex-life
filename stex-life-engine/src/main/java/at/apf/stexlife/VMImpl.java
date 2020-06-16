@@ -5,6 +5,7 @@ import at.apf.stexlife.api.DataType;
 import at.apf.stexlife.api.DataUnit;
 import at.apf.stexlife.api.FunctionWrapper;
 import at.apf.stexlife.api.StexLifeVM;
+import at.apf.stexlife.api.exception.FunctionNotFoundException;
 import at.apf.stexlife.api.exception.InvalidTypeException;
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.exception.UncaughtExceptionException;
@@ -13,7 +14,7 @@ import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 import at.apf.stexlife.runtime.Arithmetics;
 import at.apf.stexlife.runtime.DataFrame;
 import at.apf.stexlife.runtime.ExpressionWrapper;
-import at.apf.stexlife.runtime.Module;
+import at.apf.stexlife.api.ModuleWrapper;
 import at.apf.stexlife.runtime.StexFrame;
 import at.apf.stexlife.runtime.StmtResult;
 import at.apf.stexlife.runtime.exception.NameAlreadyDeclaredException;
@@ -35,8 +36,8 @@ public class VMImpl implements StexLifeVM {
 
     private StexFrame stexFrame;
     private PluginRegistry pluginRegistry;
-    private Map<String, Module> modules = new HashMap<>(); // <moduleName, Module>
-    private Module mainModule;
+    private Map<String, ModuleWrapper> modules = new HashMap<>(); // <moduleName, Module>
+    private ModuleWrapper mainModule;
     private static StexLifeCodeParser parser = new StexLifeCodeParser();
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program) {
@@ -44,7 +45,7 @@ public class VMImpl implements StexLifeVM {
     }
 
     public VMImpl(StexLifeGrammarParser.ProgramContext program, PluginRegistry pluginRegistry) {
-        mainModule = new Module(program);
+        mainModule = new ModuleWrapper(program);
         this.pluginRegistry = pluginRegistry;
     }
 
@@ -56,53 +57,46 @@ public class VMImpl implements StexLifeVM {
     @Override
     public DataUnit run(String function, DataUnit[] data) throws UncaughtExceptionException {
         Optional<StexLifeGrammarParser.FunctionContext> fun = mainModule.getProgram().function().stream()
-                .filter(f -> f.ID().getText().equals(function) && f.paramList().ID().size() == data.length)
+                .filter(f -> f.ID().getText().equals(function))
                 .findFirst();
         if (fun.isPresent()) {
-            stexFrame = new StexFrame(null, new DataFrame(null));
+            DataFrame df = new DataFrame(null);
+            stexFrame = new StexFrame(null, df);
             for (int i = 0; i < fun.get().paramList().ID().size(); i++) {
-                stexFrame.getDataFrame().set(fun.get().paramList().ID(i).getText(), data[i]);
+                df.set(fun.get().paramList().ID(i).getText(),
+                        i < data.length ? data[i] : DataUnit.UNDEFINED);
             }
             try {
-                return runFunction(new FunctionWrapper(fun.get()));
+                return runFunction(new FunctionWrapper(fun.get(), mainModule));
             } catch (StexLifeException e) {
                 throw new UncaughtExceptionException(e);
             }
         } else {
-            throw new UncaughtExceptionException(new NameNotFoundException(function + "{" + data.length + "}"));
+            throw new UncaughtExceptionException(new FunctionNotFoundException(function));
         }
     }
 
     @Override
     public DataUnit run(FunctionWrapper function, DataUnit[] args) {
-        // TODO: if function is anonymous or function context: Create new Stack, set args, call it
-        // TODO: Else use plugin registry
-        FunctionWrapper fw = function;
-        if (function.isNamed()) {
-            if (stexFrame.getModule().getIncludes().containsKey(function.getName()) &&
-                    pluginRegistry.isRegistered(stexFrame.getModule().getIncludes().get(function.getName()).getLeft(),
-                            stexFrame.getModule().getIncludes().get(function.getName()).getRight(), args.length)) {
-                return pluginRegistry.call(this, stexFrame.getModule().getIncludes().get(function.getName()).getLeft(),
-                        stexFrame.getModule().getIncludes().get(function.getName()).getRight(), args);
-            }
+        ModuleWrapper callModule = function.getModule();
 
-            Optional<StexLifeGrammarParser.FunctionContext> op = stexFrame.getModule().getProgram().function().stream()
-                    .filter(f -> f.ID().getText().equals(function.getName())
-                            && f.paramList().ID().size() == args.length).findAny();
-            if (op.isPresent()) {
-                fw = new FunctionWrapper(op.get());
-            } else {
-                throw new NameNotFoundException(function.getName());
+        if (function.isPluginFunction()) {
+            Pair<String, String> plugin = function.getPlugin();
+            if (pluginRegistry.isRegistered(plugin.getLeft(), plugin.getRight())) {
+                return pluginRegistry.call(this, plugin.getLeft(), plugin.getRight(), args);
             }
+            throw new FunctionNotFoundException(function.getName());
         }
 
         DataFrame df = new DataFrame(null);
-        for (int i = 0; i < args.length; i++) {
-            df.set(fw.getParamList().ID(i).getText(), args[i]);
+        for (int i = 0; i < function.getParamList().ID().size(); i++) {
+            df.set(function.getParamList().ID(i).getText(),
+                    i < args.length ? args[i] : DataUnit.UNDEFINED);
         }
 
         stexFrame = new StexFrame(stexFrame, df);
-        DataUnit result = runFunction(fw);
+        stexFrame.setModule(callModule);
+        DataUnit result = runFunction(function);
         stexFrame = stexFrame.getParent();
 
         return result;
@@ -137,9 +131,9 @@ public class VMImpl implements StexLifeVM {
      * @return
      * @throws IOException
      */
-    private Module loadModule(File file) throws IOException {
+    private ModuleWrapper loadModule(File file) throws IOException {
         StexLifeGrammarParser.ProgramContext program = parser.parse(file);
-        Module module = new Module(program);
+        ModuleWrapper module = new ModuleWrapper(program);
         if (modules.containsKey(module.getName())) {
             return modules.get(module.getName());
         }
@@ -156,7 +150,7 @@ public class VMImpl implements StexLifeVM {
      * @param module Module to handle the includes.
      * @throws IOException When a subModule which has to be loaded throws an IOException.
      */
-    private void loadModuleIncludes(Module module) throws IOException {
+    private void loadModuleIncludes(ModuleWrapper module) throws IOException {
         for (StexLifeGrammarParser.IncludeContext i: module.getProgram().include()) {
             if (i.FROM() != null) {
                 // only register selected ones
@@ -169,7 +163,7 @@ public class VMImpl implements StexLifeVM {
                     // TODO: Handle file path correctly (relative to current file location)
                     String filePath = i.includeSource().STRING().getText();
                     filePath = filePath.substring(1, filePath.length() - 1);
-                    Module subModule = loadModule(new File(filePath));
+                    ModuleWrapper subModule = loadModule(new File(filePath));
                     moduleName = subModule.getName();
                 }
                 i.includeDeclaration().forEach(dec -> {
@@ -192,7 +186,7 @@ public class VMImpl implements StexLifeVM {
                     // module
                     String filePath = i.includeSource().STRING().getText();
                     filePath = filePath.substring(1, filePath.length() - 1);
-                    Module subModule = loadModule(new File(filePath));
+                    ModuleWrapper subModule = loadModule(new File(filePath));
                     moduleName = subModule.getName();
                     exportedFunctions = subModule.getExportedFunctions();
                 }
@@ -206,27 +200,72 @@ public class VMImpl implements StexLifeVM {
     }
 
     private DataUnit resolveIdentifier(StexLifeGrammarParser.IdentifierContext ctx) {
+        // Check if theres a variable in the dataframe
+        // Else check if theres a local function
+        // else check if theres an import
+        // return undefined
+
         List<TerminalNode> ids = ctx.ID();
-        DataUnit dataUnit;
+        DataUnit dataUnit = null;
         int start = 0;
         if (ctx.SELF() != null) {
             if (stexFrame.getSelf() == null) {
-                throw new NameNotFoundException("this");
+                //throw new NameNotFoundException("this");
+                dataUnit = DataUnit.UNDEFINED;
             }
             dataUnit = stexFrame.getSelf();
         } else {
-            dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
+            try {
+                dataUnit = stexFrame.getDataFrame().get(ids.get(0).getText());
+            } catch (NameNotFoundException e) {
+                dataUnit = null;
+            }
             start = 1;
         }
 
-        for (int i = start; i < ids.size(); i++) {
-            String name = ids.get(i).getText();
-            if (dataUnit.getType() != DataType.OBJECT || !dataUnit.getObject().containsKey(name)) {
-                throw new NameNotFoundException(name);
+        if (dataUnit != null) {
+            // resolve object path
+            for (int i = start; i < ids.size(); i++) {
+                String name = ids.get(i).getText();
+                if (dataUnit.getType() != DataType.OBJECT || !dataUnit.getObject().containsKey(name)) {
+                    return DataUnit.UNDEFINED;
+                }
+                dataUnit = dataUnit.getObject().get(name);
             }
-            dataUnit = dataUnit.getObject().get(name);
+            return dataUnit;
         }
-        return dataUnit;
+
+        // check for local function
+        String name = ctx.getText();
+        Optional<StexLifeGrammarParser.FunctionContext> op = stexFrame.getModule().getProgram().function().stream()
+                .filter(f -> f.ID().getText().equals(name)).findFirst();
+
+        if (op.isPresent()) {
+            return new DataUnit(new FunctionWrapper(op.get(), stexFrame.getModule()), DataType.FUNCTION);
+        }
+
+        // check in includes
+        Map<String, Pair<String, String>> includes = stexFrame.getModule().getIncludes();
+        if (includes.containsKey(name)) {
+            // check in plugin registry
+            if (pluginRegistry.isRegistered(includes.get(name).getLeft(), includes.get(name).getRight())) {
+                return new DataUnit(new FunctionWrapper(
+                        new ImmutablePair<>(includes.get(name).getLeft(), includes.get(name).getRight())), DataType.FUNCTION);
+            }
+
+            // find in modules
+            if (modules.containsKey(includes.get(name).getLeft())) {
+                ModuleWrapper mod = modules.get(includes.get(name).getLeft());
+                op = mod.getProgram().function().stream()
+                        .filter(f -> f.ID().getText().equals(includes.get(name).getRight()))
+                        .findFirst();
+                if (op.isPresent()) {
+                    return new DataUnit(new FunctionWrapper(op.get(), mod), DataType.FUNCTION);
+                }
+            }
+        }
+
+        return DataUnit.UNDEFINED;
     }
 
     private DataUnit runFunction(FunctionWrapper f) {
@@ -563,7 +602,7 @@ public class VMImpl implements StexLifeVM {
         } else if (e.functionCall() != null) {
             return evalFunctionCall(e.functionCall());
         } else if (e.anonymousFunction() != null) {
-            return new DataUnit(new FunctionWrapper(e.anonymousFunction()), DataType.FUNCTION);
+            return new DataUnit(new FunctionWrapper(e.anonymousFunction(), stexFrame.getModule()), DataType.FUNCTION);
         } else if (e.getSelfFunctionRef() != null) {
             DataUnit fun = evalExpression(e.getSelfFunctionRef().expression());
             DataType.expecting(fun, DataType.FUNCTION);
@@ -577,19 +616,10 @@ public class VMImpl implements StexLifeVM {
         if (ctx.value() != null) {
             return Converter.fromValueContext(ctx.value());
         }
+
         // IDENTIFIER
         DataUnit dataUnit;
-        try {
-            dataUnit = resolveIdentifier(ctx.identifier());
-        } catch (NameNotFoundException ex) {
-            // function
-            String name = ctx.identifier().ID(0).getText();
-            if (stexFrame.getModule().getProgram().function().stream()
-                    .anyMatch(f -> f.ID().getText().equals(name))) {
-                dataUnit = new DataUnit(new FunctionWrapper(name), DataType.FUNCTION);
-            }
-            else throw ex;
-        }
+        dataUnit = resolveIdentifier(ctx.identifier());
         if (dataUnit.getType() == DataType.OBJECT || dataUnit.getType() == DataType.ARRAY ||
                 dataUnit.getType() == DataType.FUNCTION || dataUnit.getType() == DataType.LIMITED) {
             return new DataUnit(dataUnit.getContent(), dataUnit.getType());
@@ -714,80 +744,15 @@ public class VMImpl implements StexLifeVM {
     }
 
     private DataUnit evalFunctionCall(StexLifeGrammarParser.FunctionCallContext ctx) {
-        /**
-         * 1. Look for name in dataFrame
-         * 2. Look for name in program.functionlist
-         * 3. Look for name in PluginRegistry
-         */
+        DataUnit fun = resolveIdentifier(ctx.identifier());
+        DataType.expecting(fun, DataType.FUNCTION);
 
-        FunctionWrapper fw;
-        int argListSize = ctx.argList().expression().size();
-
-        try {
-            // Function in variable
-            DataUnit duf = resolveIdentifier(ctx.identifier());
-            if (duf.getType() != DataType.FUNCTION) {
-                throw new InvalidTypeException(duf.getType(), DataType.FUNCTION);
-            }
-            fw = duf.getFunction();
-        } catch (NameNotFoundException e) {
-            // local or imported function
-            String name = ctx.identifier().ID().stream().map(tn -> tn.getText()).collect(Collectors.joining("."));
-            Optional<StexLifeGrammarParser.FunctionContext> op = stexFrame.getModule().getProgram().function().stream()
-                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == argListSize)
-                    .findFirst();
-            if (op.isPresent()) {
-                // local function
-                fw = new FunctionWrapper(op.get());
-            } else {
-                // Look in PluginRegistry
-                if (!stexFrame.getModule().getIncludes().containsKey(name) ||
-                        !pluginRegistry.isRegistered(stexFrame.getModule().getIncludes().get(name).getLeft(), stexFrame.getModule().getIncludes().get(name).getRight(), ctx.argList().expression().size())) {
-                    throw new NameNotFoundException(name + "{" + ctx.argList().expression().size() + "}");
-                }
-                fw = new FunctionWrapper(name);
-            }
-        }
-
-        // eval args
-        DataUnit[] args = new DataUnit[argListSize];
+        DataUnit[] args = new DataUnit[ctx.argList().expression().size()];
         for (int i = 0; i < args.length; i++) {
             args[i] = evalExpression(ctx.argList().expression(i));
         }
 
-        // if named
-        if (fw.isNamed()) {
-            // find local function
-            String name = fw.getName();
-            Optional<StexLifeGrammarParser.FunctionContext> op = stexFrame.getModule().getProgram().function().stream()
-                    .filter(f -> f.ID().getText().equals(name) && f.paramList().ID().size() == argListSize)
-                    .findFirst();
-            if (op.isPresent()) {
-                DataUnit self = fw.getCtx();
-                fw = new FunctionWrapper(op.get());
-                fw.setCtx(self);
-            } else {
-                // find plugin function
-                if (!stexFrame.getModule().getIncludes().containsKey(name) ||
-                        !pluginRegistry.isRegistered(stexFrame.getModule().getIncludes().get(name).getLeft(), stexFrame.getModule().getIncludes().get(name).getRight(), ctx.argList().expression().size())) {
-                    throw new NameNotFoundException(name);
-                }
-                return pluginRegistry.call(this, stexFrame.getModule().getIncludes().get(name).getLeft(), stexFrame.getModule().getIncludes().get(name).getRight(), args);
-            }
-        }
-
-        DataFrame df = new DataFrame(null);
-        for (int i = 0; i < args.length; i++) {
-            df.set(fw.getParamList().ID(i).getText(), args[i]);
-        }
-
-        // call
-        stexFrame = new StexFrame(stexFrame, df);
-        stexFrame.setSelf(fw.getCtx());
-        DataUnit result = runFunction(fw);
-        stexFrame = stexFrame.getParent();
-
-        return result;
+        return run(fun.getFunction(), args);
     }
 
 }

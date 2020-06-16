@@ -187,4 +187,8 @@ public class DataUnit implements Comparable<DataUnit> {
                   content + ":" + type.name() +
                 '}';
     }
+
+
+    public static final DataUnit UNDEFINED = new DataUnit(null, DataType.UNDEFINED);
+    public static final DataUnit NULL = new DataUnit(null, DataType.NULL);
 }

@@ -1,4 +1,4 @@
-package at.apf.stexlife.runtime;
+package at.apf.stexlife.api;
 
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class Module {
+public class ModuleWrapper {
     private StexLifeGrammarParser.ProgramContext program;
     private Map<String, Pair<String, String>> includes = new HashMap<>();   // <alias, <module, fun>>
 
-    public Module(StexLifeGrammarParser.ProgramContext program) {
+    public ModuleWrapper(StexLifeGrammarParser.ProgramContext program) {
         this.program = program;
     }
 

@@ -1,6 +1,7 @@
 package at.apf.stexlife.runtime;
 
 import at.apf.stexlife.api.DataUnit;
+import at.apf.stexlife.api.ModuleWrapper;
 
 public class StexFrame {
 
@@ -8,7 +9,7 @@ public class StexFrame {
     private DataFrame dataFrame;
     private DataUnit self;
     private DataUnit result;
-    private Module module;
+    private ModuleWrapper module;
 
     public StexFrame(StexFrame parent) {
         this.parent = parent;
@@ -61,11 +62,11 @@ public class StexFrame {
         return self;
     }
 
-    public Module getModule() {
+    public ModuleWrapper getModule() {
         return module;
     }
 
-    public void setModule(Module module) {
+    public void setModule(ModuleWrapper module) {
         this.module = module;
     }
 }
