@@ -598,6 +598,9 @@ public class VMImpl implements StexLifeVM {
 
     private DataUnit evalOperand(StexLifeGrammarParser.OperandContext ctx) {
         if (ctx.value() != null) {
+            if (ctx.value().elString() != null) {
+                return evalElString(ctx.value().elString());
+            }
             return Converter.fromValueContext(ctx.value());
         }
 
@@ -609,6 +612,16 @@ public class VMImpl implements StexLifeVM {
             return new DataUnit(dataUnit.getContent(), dataUnit.getType());
         }
         return dataUnit.copy();
+    }
+
+    private DataUnit evalElString(StexLifeGrammarParser.ElStringContext ctx) {
+        String result = ctx.getText();
+        result = result.substring(1, result.length() - 1);
+        for (StexLifeGrammarParser.ElExpressionContext el: ctx.elExpression()) {
+            DataUnit expr = evalExpression(el.expression());
+            result = result.replace(el.getText(), Converter.stringify(expr));
+        }
+        return new DataUnit(result, DataType.STRING);
     }
 
     private DataUnit evalArray(StexLifeGrammarParser.ArrayContext ctx) {

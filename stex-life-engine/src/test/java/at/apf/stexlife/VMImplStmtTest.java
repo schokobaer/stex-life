@@ -735,4 +735,30 @@ public class VMImplStmtTest {
         Assert.assertEquals(DataType.INT, result.getType());
         Assert.assertEquals(3, result.getInt().intValue());
     }
+
+    @Test
+    public void singleQuoteString_shouldGetParsedCorrectly() {
+        String code =
+                "main() {" +
+                        "  let str = 'hallo';" +
+                        "  return str;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("hallo", result.getString());
+    }
+
+    @Test
+    public void singleQuoteStringWithExpression_shouldEvaluateExpression() {
+        String code =
+                "main() {" +
+                        "  let str = 'hallo${1 + 2}';" +
+                        "  return str;" +
+                        "}";
+        vm = new VMImpl(StexCodeParser.parse(code));
+        DataUnit result = vm.run("main");
+        Assert.assertEquals(DataType.STRING, result.getType());
+        Assert.assertEquals("hallo3", result.getString());
+    }
 }

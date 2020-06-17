@@ -52,7 +52,9 @@ operationExpression:	('(' expression ')'|operand|ternaryExpression|dynamicAccess
 
 operand:		(identifier|value);
 identifier:		(ID|SELF) ('.' ID)* ;
-value:			(INT|FLOAT|BOOLEAN|NULL|STRING|UNDEFINED) ;
+value:			(INT|FLOAT|BOOLEAN|NULL|STRING|elString|UNDEFINED) ;
+elString:       '\'' (elExpression|.)*?  '\'' ;
+elExpression:   '${' expression '}' ;
 dynamicAccess:	identifier '[' expression ']' ;
 
 object:				'{' (objectField (',' objectField)*)? '}';
