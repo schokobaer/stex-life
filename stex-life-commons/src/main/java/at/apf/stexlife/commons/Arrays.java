@@ -2,9 +2,12 @@ package at.apf.stexlife.commons;
 
 import at.apf.stexlife.api.DataType;
 import at.apf.stexlife.api.DataUnit;
+import at.apf.stexlife.api.StexLifeVM;
 import at.apf.stexlife.api.exception.StexLifeException;
 import at.apf.stexlife.api.plugin.StexLifeFunction;
 import at.apf.stexlife.api.plugin.StexLifeModule;
+
+import java.util.stream.Collectors;
 
 @StexLifeModule("arrays")
 public class Arrays {
@@ -28,11 +31,39 @@ public class Arrays {
     }
 
     @StexLifeFunction
-    public void sort(DataUnit arr, DataUnit cmpFunction) {
+    public DataUnit sort(StexLifeVM vm, DataUnit arr, DataUnit cmpFunction) {
         DataType.expecting(arr, DataType.ARRAY);
         DataType.expecting(cmpFunction, DataType.FUNCTION);
         try {
-            // TODO: Implement
+            return new DataUnit(arr.getArray().stream()
+                    .sorted((a,b) -> vm.run(cmpFunction.getFunction(), new DataUnit[]{a, b}).getInt().intValue())
+                    .collect(Collectors.toList()), DataType.ARRAY);
+        } catch (Exception e) {
+            throw new StexLifeException(e.getMessage());
+        }
+    }
+
+    @StexLifeFunction
+    public DataUnit filter(StexLifeVM vm, DataUnit arr, DataUnit filterFunction) {
+        DataType.expecting(arr, DataType.ARRAY);
+        DataType.expecting(filterFunction, DataType.FUNCTION);
+        try {
+            return new DataUnit(arr.getArray().stream()
+                    .filter(a -> vm.run(filterFunction.getFunction(), new DataUnit[]{a}).getBool())
+                    .collect(Collectors.toList()), DataType.ARRAY);
+        } catch (Exception e) {
+            throw new StexLifeException(e.getMessage());
+        }
+    }
+
+    @StexLifeFunction
+    public DataUnit map(StexLifeVM vm, DataUnit arr, DataUnit mapFunction) {
+        DataType.expecting(arr, DataType.ARRAY);
+        DataType.expecting(mapFunction, DataType.FUNCTION);
+        try {
+            return new DataUnit(arr.getArray().stream()
+                    .map(a -> vm.run(mapFunction.getFunction(), new DataUnit[]{a}))
+                    .collect(Collectors.toList()), DataType.ARRAY);
         } catch (Exception e) {
             throw new StexLifeException(e.getMessage());
         }

@@ -1,5 +1,6 @@
 package at.apf.stexlife.parser;
 
+import at.apf.stexlife.parser.antlr4.StexLifeGrammarParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -22,5 +23,10 @@ public class StexLifeCodeParser {
     public at.apf.stexlife.parser.antlr4.StexLifeGrammarParser.ProgramContext parse(File file) throws IOException {
         String code = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())), StandardCharsets.UTF_8);
         return parse(code);
+    }
+
+    public StexLifeGrammarParser.ExpressionContext parseExpression(String code) {
+        // TODO: Implement
+        return null;
     }
 }

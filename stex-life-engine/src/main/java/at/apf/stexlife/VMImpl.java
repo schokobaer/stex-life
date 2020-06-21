@@ -42,6 +42,10 @@ public class VMImpl implements StexLifeVM {
     private ModuleWrapper mainModule;
     private static StexLifeCodeParser parser = new StexLifeCodeParser();
 
+    private VMImpl() {
+
+    }
+
     public VMImpl(StexLifeGrammarParser.ProgramContext program) {
         this(program, new File(System.getProperty("user.dir")));
     }
@@ -108,6 +112,16 @@ public class VMImpl implements StexLifeVM {
     @Override
     public void loadIncludes() throws IOException {
         loadModuleIncludes(mainModule);
+    }
+
+    @Override
+    public StexLifeVM copyForNewThread() {
+        VMImpl copy = new VMImpl();
+        copy.stexFrame = new StexFrame(null, new DataFrame(null));
+        copy.modules = modules;
+        copy.pluginRegistry = pluginRegistry;
+        copy.mainModule = mainModule;
+        return copy;
     }
 
     /**

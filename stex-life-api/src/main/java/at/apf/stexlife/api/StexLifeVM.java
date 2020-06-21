@@ -15,6 +15,8 @@ public interface StexLifeVM {
 
     void loadIncludes() throws IOException;
 
+    StexLifeVM copyForNewThread();
+
     /**
      * TODOS:
      *  - concatExpression support (zB person().name)

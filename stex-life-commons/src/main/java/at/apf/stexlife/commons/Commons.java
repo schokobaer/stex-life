@@ -7,7 +7,9 @@ public class Commons {
                 new Types(),
                 new Maths(),
                 new StdIO(),
-                new Strings()
+                new Strings(),
+                new Parallels(),
+                new Files()
         };
     }
 }

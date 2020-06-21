@@ -1,0 +1,30 @@
+from parallels import sleep, async, await;
+from stdio import print, println;
+
+main(args) {
+    let obj = {c:0};
+    obj = foo(obj);
+    println(obj);
+    obj = foo(obj);
+    println(obj);
+}
+
+foo(obj) {
+    let promise = async((arr){
+        let x = arr[0];
+        for (let i = 1; i < 7; i += 1) {
+            x.c = x.c + 1;
+            sleep(1000);
+        }
+        return x;
+    }, [obj]);
+    print("Waiting for second thread ");
+    for (let i = 1; i < 5; i += 1) {
+        print(".");
+        sleep(1000);
+    }
+    println(".");
+    let result = await(promise);
+    return result;
+}
+
