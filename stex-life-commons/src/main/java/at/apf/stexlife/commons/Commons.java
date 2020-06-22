@@ -9,6 +9,7 @@ public class Commons {
                 new StdIO(),
                 new Strings(),
                 new Parallels(),
+                new Mutex(),
                 new Files()
         };
     }

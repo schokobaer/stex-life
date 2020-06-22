@@ -1,0 +1,29 @@
+import mutex;
+from stdio import println;
+from parallels import async, sleep;
+
+main() {
+    let lock = mutex.lock();
+    async(bus, [lock]);
+    passant(lock);
+}
+
+bus(lock) {
+    for (let i = 0; i < 10; i += 1) {
+        println("Bus waits for green");
+        mutex.lock(lock);
+        println("Bus drives now");
+        sleep(500);
+        mutex.unlock(lock);
+    }
+}
+
+passant(lock) {
+    for (let i = 0; i < 10; i += 1) {
+        println("Passant waits for green");
+        mutex.lock(lock);
+        println("Passant goes now");
+        sleep(1000);
+        mutex.unlock(lock);
+    }
+}

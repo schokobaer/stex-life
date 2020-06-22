@@ -110,6 +110,11 @@ public class DataUnit implements Comparable<DataUnit> {
     }
 
     @Override
+    public int hashCode() {
+        return content.hashCode();
+    }
+
+    @Override
     public int compareTo(DataUnit that) {
 
         // Null
@@ -153,31 +158,6 @@ public class DataUnit implements Comparable<DataUnit> {
         }
 
         return 0;
-
-
-        /*if(type == DataType.ARRAY && that.type == DataType.ARRAY) {
-            return getArray().size() == that.getArray().size() ? 0 :
-                    getArray().size() > that.getArray().size() ? 1 : -1;
-        }
-
-        if(type == DataType.STRING && that.type == DataType.STRING) {
-            return getString().compareTo(that.getString());
-        }
-
-        // Object/Pointer/Function => Exception
-        // Object/Function/Pointer => NotAllowed
-        if(getType() == DataType.OBJECT || getType() == DataType.OBJECT ||
-                getType() == DataType.FUNCTION || getType() == DataType.FUNCTION ||
-                getType() == DataType.ARRAY || getType() == DataType.ARRAY ||
-                getType() == DataType.STRING || getType() == DataType.STRING) {
-            throw new RuntimeException("Unvalid comparison" + getType().name() + " + " + getType().name());
-        }
-
-        //DataUnit d1 = Convert.toFloat(this);
-        //DataUnit d2 = Convert.toFloat(that);
-
-        //return d1.getFloat().compareTo(d2.getFloat());
-        return -1;*/
     }
 
 

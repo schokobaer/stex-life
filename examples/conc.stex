@@ -5,8 +5,6 @@ main(args) {
     let obj = {c:0};
     obj = foo(obj);
     println(obj);
-    obj = foo(obj);
-    println(obj);
 }
 
 foo(obj) {
@@ -24,7 +22,7 @@ foo(obj) {
         sleep(1000);
     }
     println(".");
-    let result = await(promise);
-    return result;
+    await(promise);
+    return obj;
 }
 
